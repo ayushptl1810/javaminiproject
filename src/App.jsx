@@ -11,7 +11,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Layout from "./components/layout/Layout";
-import TestUserSetup from "./components/TestUserSetup";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -100,7 +99,6 @@ function App() {
                 />
 
                 {/* Test User Setup Component */}
-                <TestUserSetup />
               </div>
             </Router>
           </NotificationProvider>

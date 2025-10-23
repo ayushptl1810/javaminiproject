@@ -51,6 +51,11 @@ export const NotificationProvider = ({ children }) => {
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      // Re-fetch notifications to ensure consistency
+      setTimeout(() => {
+        fetchNotifications();
+      }, 100);
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
     }
@@ -61,6 +66,11 @@ export const NotificationProvider = ({ children }) => {
       await notificationAPI.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
+      
+      // Re-fetch notifications to ensure consistency
+      setTimeout(() => {
+        fetchNotifications();
+      }, 100);
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
     }

@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* Force dark mode with proper colors */
+html,
+body {
+  background-color: #111827; /* Dark gray instead of black */
+  color: #f9fafb;
+}
+
+/* Ensure dark mode is applied */
+.dark {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+}

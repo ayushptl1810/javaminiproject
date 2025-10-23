@@ -9,19 +9,19 @@ const Layout = () => {
       <div className="flex">
         {/* Sidebar */}
         <Sidebar />
-        
+
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header */}
           <Header />
-          
+
           {/* Page Content */}
           <main className="flex-1 p-6">
             <Outlet />
           </main>
         </div>
       </div>
-      
+
       {/* Notification Panel */}
       <NotificationPanel />
     </div>

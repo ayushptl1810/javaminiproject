@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>React Vite App</title>
+    <title>SubSentry - Subscription Tracker</title>
+    <script>
+      // Force dark mode on page load
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.backgroundColor = '#111827';
+      document.body.style.backgroundColor = '#111827';
+      localStorage.setItem('theme', 'dark');
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
-import { 
-  Bell, 
-  X, 
-  Check, 
-  Trash2, 
-  AlertTriangle, 
+import {
+  Bell,
+  X,
+  Check,
+  Trash2,
+  AlertTriangle,
   Info,
   CheckCircle,
-  Clock
+  Clock,
 } from "lucide-react";
 import { useNotification } from "../../contexts/NotificationContext";
 import { clsx } from "clsx";
 
 const NotificationPanel = () => {
-  const { 
-    notifications, 
-    isOpen, 
-    setIsOpen, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification 
+  const {
+    notifications,
+    isOpen,
+    setIsOpen,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
   } = useNotification();
 
   const [filter, setFilter] = useState("all");
@@ -27,11 +27,20 @@ const NotificationPanel = () => {
   // Ensure notifications is an array
   const notificationsArray = Array.isArray(notifications) ? notifications : [];
 
-  const filteredNotifications = notificationsArray.filter(notification => {
+  const filteredNotifications = notificationsArray.filter((notification) => {
     if (filter === "unread") return !notification.read;
     if (filter === "read") return notification.read;
     return true;
   });
+
+  // Debug logging
+  console.log("Filter:", filter);
+  console.log("Total notifications:", notificationsArray.length);
+  console.log("Filtered notifications:", filteredNotifications.length);
+  console.log(
+    "Unread count:",
+    notificationsArray.filter((n) => !n.read).length
+  );
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -64,11 +73,10 @@ const NotificationPanel = () => {
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-50"
+      <div
+        className="absolute inset-0 bg-black/50 "
         onClick={() => setIsOpen(false)}
       />
-      
       {/* Panel */}
       <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl">
         <div className="flex flex-col h-full">
@@ -116,7 +124,7 @@ const NotificationPanel = () => {
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={markAllAsRead}
-              disabled={notificationsArray.every(n => n.read)}
+              disabled={notificationsArray.every((n) => n.read)}
               className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="h-4 w-4 mr-2" />
@@ -149,12 +157,14 @@ const NotificationPanel = () => {
                       </div>
                       <div className="ml-3 flex-1">
                         <div className="flex items-center justify-between">
-                          <p className={clsx(
-                            "text-sm font-medium",
-                            notification.read 
-                              ? "text-gray-600 dark:text-gray-400" 
-                              : "text-gray-900 dark:text-white"
-                          )}>
+                          <p
+                            className={clsx(
+                              "text-sm font-medium",
+                              notification.read
+                                ? "text-gray-600 dark:text-gray-400"
+                                : "text-gray-900 dark:text-white"
+                            )}
+                          >
                             {notification.title}
                           </p>
                           <div className="flex items-center space-x-2">
@@ -168,7 +178,9 @@ const NotificationPanel = () => {
                               </button>
                             )}
                             <button
-                              onClick={() => deleteNotification(notification.id)}
+                              onClick={() =>
+                                deleteNotification(notification.id)
+                              }
                               className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
                               title="Delete"
                             >
