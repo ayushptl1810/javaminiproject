@@ -415,3 +415,41 @@ SPRING_MAIL_PASSWORD=your-password
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+# SubSentry Project Setup
+
+## Database Setup
+1. Install MySQL Server and Workbench
+2. Connect to the team database:
+   - Host: 192.168.1.26
+   - Port: 3306
+   - Database: subsentry
+   - Username: teamuser
+   - Password: pass_0612
+
+## Run the Application
+1. Clone the repository
+```bash
+git clone <your-repository-url>
+cd javaminiproject
+```
+
+2. Build and run
+```bash
+cd backend
+mvn clean install
+mvn spring-boot:run
+```
+
+3. Verify it's working
+- Open http://localhost:8080 in your browser
+- Try logging in with the test account:
+  - Email: test@example.com
+  - Password: password123
+
+## Troubleshooting
+- If database connection fails, ensure:
+  - You can ping 192.168.1.26
+  - MySQL port 3306 is accessible
+  - The credentials are correct
+- For any issues, check application logs in the terminal

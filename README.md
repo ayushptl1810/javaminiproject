@@ -249,3 +249,21 @@ For support, email support@subsentry.com or join our Slack channel.
 ---
 
 **SubSentry** - Take control of your subscription spending! 💰
+
+
+
+## Database Setup with Railway
+
+1. Get the database credentials from the team lead
+2. Create a `.env` file in the project root
+3. Add the following environment variables with Railway credentials:
+   ```
+   MYSQL_HOST=your-railway-host
+   MYSQL_PORT=your-railway-port
+   MYSQL_DATABASE=railway
+   MYSQL_USER=your-railway-username
+   MYSQL_PASSWORD=your-railway-password
+   ```
+4. The application will automatically connect to the Railway database
+
+Note: Never commit the `.env` file to Git

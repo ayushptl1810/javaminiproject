@@ -1,42 +1,67 @@
 package com.subsentry.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.index.Indexed;
-
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
  * User entity representing a SubSentry user account
  */
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
 public class User {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
     
+    @Column(nullable = false)
     private String name;
+    
+    @Column(nullable = false, unique = true)
     private String email;
+    
+    @Column(nullable = false)
     private String password;
+    
+    @Column(name = "default_currency")
     private String defaultCurrency = "USD";
+    
     private String timezone = "UTC";
+    
+    @Column(name = "date_format")
     private String dateFormat = "MM/DD/YYYY";
+    
+    @Column(columnDefinition = "TEXT")
     private String bio;
+    
     private String location;
     private String website;
     private String avatar;
     
+    @Column(name = "email_verified")
     private boolean emailVerified = false;
+    
     private boolean enabled = true;
     
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
     
-    // Notification preferences
+    @Column(name = "email_notifications")
     private boolean emailNotifications = true;
+    
+    @Column(name = "browser_notifications")
     private boolean browserNotifications = true;
+    
+    @Column(name = "renewal_reminders")
     private boolean renewalReminders = true;
+    
+    @Column(name = "weekly_summary")
     private boolean weeklySummary = false;
     
     // Constructors
@@ -211,6 +236,11 @@ public class User {
     
     public void setWeeklySummary(boolean weeklySummary) {
         this.weeklySummary = weeklySummary;
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
     
     @Override
