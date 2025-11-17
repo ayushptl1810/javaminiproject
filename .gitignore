@@ -30,3 +30,17 @@ dist-ssr
 .env.test.local
 .env.production.local
 *.env
+
+
+# Maven build output
+backend/target/
+backend/target/*.jar
+backend/target/maven-archiver/
+backend/target/maven-status/
+backend/target/classes/
+backend/target/test-classes/
+
+# General Java/Maven artifacts
+*.class
+*.jar
+*.war

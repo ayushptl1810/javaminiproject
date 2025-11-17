@@ -4,12 +4,10 @@ import {
   Calendar, 
   BarChart3, 
   FileText, 
-  Settings, 
   User,
   Menu,
   X,
-  Home,
-  Bell
+  Home
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -25,7 +23,6 @@ const Sidebar = () => {
     { name: "Calendar", href: "/calendar", icon: Calendar },
     { name: "Analysis", href: "/analysis", icon: BarChart3 },
     { name: "Reports", href: "/reports", icon: FileText },
-    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { X, FileText, Calendar, Filter, Download } from "lucide-react";
 import { reportAPI } from "../../services/api";
 import { toast } from "react-hot-toast";
@@ -18,6 +18,7 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
     formState: { errors },
     watch,
     setValue,
+    control,
   } = useForm({
     defaultValues: {
       name: template?.title || "",
@@ -38,14 +39,46 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
   const reportType = watch("type");
   const dateRange = watch("dateRange");
   const scheduleFrequency = watch("scheduleFrequency");
+  const startDateValue = watch("startDate");
+  const endDateValue = watch("endDate");
+
+  useEffect(() => {
+    if (template?.title) {
+      setValue("name", template.title);
+    }
+  }, [template, setValue]);
 
   const reportTypes = [
-    { value: "summary", label: "Summary Report", description: "Overview of all subscriptions" },
-    { value: "detailed", label: "Detailed Report", description: "Comprehensive subscription analysis" },
-    { value: "category", label: "Category Report", description: "Breakdown by subscription category" },
-    { value: "trend", label: "Trend Report", description: "Spending trends over time" },
-    { value: "tax", label: "Tax Report", description: "Subscription expenses for tax purposes" },
-    { value: "custom", label: "Custom Report", description: "Build your own report" },
+    {
+      value: "summary",
+      label: "Summary Report",
+      description: "Overview of all subscriptions",
+    },
+    {
+      value: "detailed",
+      label: "Detailed Report",
+      description: "Comprehensive subscription analysis",
+    },
+    {
+      value: "category",
+      label: "Category Report",
+      description: "Breakdown by subscription category",
+    },
+    {
+      value: "trend",
+      label: "Trend Report",
+      description: "Spending trends over time",
+    },
+    {
+      value: "tax",
+      label: "Tax Report",
+      description: "Subscription expenses for tax purposes",
+    },
+    {
+      value: "custom",
+      label: "Custom Report",
+      description: "Build your own report",
+    },
   ];
 
   const dateRangeOptions = [
@@ -72,27 +105,59 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
   ];
 
   const categories = [
-    "Streaming", "Software", "Cloud Services", "Gym/Fitness", 
-    "News/Magazines", "Gaming", "Music", "Productivity", "Security", "Other"
+    "Streaming",
+    "Software",
+    "Cloud Services",
+    "Gym/Fitness",
+    "News/Magazines",
+    "Gaming",
+    "Music",
+    "Productivity",
+    "Security",
+    "Other",
   ];
 
   const onSubmit = async (data) => {
     setIsGenerating(true);
     try {
-      const reportData = {
+      const reportPayload = {
         ...data,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
+        startDate: data.startDate?.toISOString(),
+        endDate: data.endDate?.toISOString(),
+        categories: data.categories || [],
       };
 
-      const response = await reportAPI.generate(reportData);
-      
-      if (response.data.reportId) {
-        toast.success("Report generated successfully!");
-        onSuccess();
+      const response = await reportAPI.generate(reportPayload);
+      const generatedReport = response?.data?.data ?? response?.data;
+
+      if (!generatedReport?.id) {
+        throw new Error("Report generation did not return an identifier");
       }
+
+      if (data.scheduleFrequency && data.scheduleFrequency !== "none") {
+        await reportAPI.scheduleReport({
+          name: data.name,
+          frequency: data.scheduleFrequency,
+          dayOfPeriod: data.scheduleDay,
+          emailDelivery: data.emailDelivery,
+          reportId: generatedReport.id,
+          type: data.type,
+          filters: {
+            startDate: reportPayload.startDate,
+            endDate: reportPayload.endDate,
+            categories: reportPayload.categories,
+          },
+        });
+      }
+
+      toast.success("Report generated successfully!");
+      onSuccess();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to generate report");
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to generate report";
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -106,9 +171,13 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
+        <div
+          className="fixed inset-0 bg-black/70 transition-opacity"
+          onClick={onClose}
+          aria-hidden="true"
+        />
 
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="relative z-10 inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-6">
@@ -128,33 +197,53 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
               </div>
 
               {/* Progress Steps */}
-              <div className="mb-6">
-                <div className="flex items-center">
-                  {[1, 2, 3].map((step) => (
-                    <div key={step} className="flex items-center">
+              <div className="mb-6 space-y-3">
+                <div className="grid grid-cols-3 items-center text-center">
+                  {["Report Type", "Options", "Schedule"].map(
+                    (label, index) => (
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                          step <= currentStep
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                        }`}
+                        key={label}
+                        className="flex flex-col items-center w-full"
                       >
-                        {step}
+                        <div className="flex items-center w-full">
+                          {index === 0 ? (
+                            <div className="flex-1" />
+                          ) : (
+                            <div
+                              className={`flex-1 h-0.5 ${
+                                index <= currentStep - 1
+                                  ? "bg-blue-600"
+                                  : "bg-gray-200 dark:bg-gray-700"
+                              }`}
+                            />
+                          )}
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mx-3 ${
+                              index + 1 <= currentStep
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+                          {index === 2 ? (
+                            <div className="flex-1" />
+                          ) : (
+                            <div
+                              className={`flex-1 h-0.5 ${
+                                index + 1 < currentStep
+                                  ? "bg-blue-600"
+                                  : "bg-gray-200 dark:bg-gray-700"
+                              }`}
+                            />
+                          )}
+                        </div>
+                        <span className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                          {label}
+                        </span>
                       </div>
-                      {step < 3 && (
-                        <div
-                          className={`w-16 h-1 mx-2 ${
-                            step < currentStep ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-2 text-xs text-gray-600 dark:text-gray-400">
-                  <span>Report Type</span>
-                  <span>Options</span>
-                  <span>Schedule</span>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -166,13 +255,17 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
                       Report Name
                     </label>
                     <input
-                      {...register("name", { required: "Report name is required" })}
+                      {...register("name", {
+                        required: "Report name is required",
+                      })}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       placeholder="Enter report name"
                     />
                     {errors.name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
 
@@ -229,22 +322,34 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Start Date
                         </label>
-                        <DatePicker
-                          selected={watch("startDate")}
-                          onChange={(date) => setValue("startDate", date)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          dateFormat="MMM dd, yyyy"
+                        <Controller
+                          control={control}
+                          name="startDate"
+                          render={({ field }) => (
+                            <DatePicker
+                              selected={field.value}
+                              onChange={(date) => field.onChange(date)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                              dateFormat="MMM dd, yyyy"
+                            />
+                          )}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           End Date
                         </label>
-                        <DatePicker
-                          selected={watch("endDate")}
-                          onChange={(date) => setValue("endDate", date)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          dateFormat="MMM dd, yyyy"
+                        <Controller
+                          control={control}
+                          name="endDate"
+                          render={({ field }) => (
+                            <DatePicker
+                              selected={field.value}
+                              onChange={(date) => field.onChange(date)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                              dateFormat="MMM dd, yyyy"
+                            />
+                          )}
                         />
                       </div>
                     </div>
@@ -340,11 +445,13 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
                         {...register("scheduleDay")}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       >
-                        {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                          <option key={day} value={day}>
-                            {day}
-                          </option>
-                        ))}
+                        {Array.from({ length: 28 }, (_, i) => i + 1).map(
+                          (day) => (
+                            <option key={day} value={day}>
+                              {day}
+                            </option>
+                          )
+                        )}
                       </select>
                     </div>
                   )}
@@ -391,7 +498,7 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
                   )}
                 </button>
               )}
-              
+
               {currentStep > 1 && (
                 <button
                   type="button"
@@ -401,7 +508,7 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
                   Previous
                 </button>
               )}
-              
+
               <button
                 type="button"
                 onClick={onClose}

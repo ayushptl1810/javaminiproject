@@ -19,7 +19,6 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import Analysis from "./pages/Analysis";
 import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Onboarding from "./pages/Onboarding";
 import "./App.css";
@@ -68,7 +67,6 @@ function App() {
                     <Route path="calendar" element={<Calendar />} />
                     <Route path="analysis" element={<Analysis />} />
                     <Route path="reports" element={<Reports />} />
-                    <Route path="settings" element={<Settings />} />
                     <Route path="profile" element={<Profile />} />
                     <Route path="onboarding" element={<Onboarding />} />
                   </Route>

@@ -2,9 +2,12 @@ package com.subsentry.controller;
 
 import com.subsentry.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -76,20 +79,23 @@ public class ReportController {
     }
     
     @GetMapping("/{id}/download")
-    public ResponseEntity<?> downloadReport(@PathVariable String id, @RequestParam(defaultValue = "pdf") String format) {
+    public ResponseEntity<byte[]> downloadReport(@PathVariable String id, @RequestParam(defaultValue = "pdf") String format) {
         try {
-            String reportData = reportService.downloadReport(id, format);
-            return ResponseEntity.ok(Map.of("data", reportData));
+            byte[] payload = reportService.downloadReport(id, format);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + id + "." + format)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(payload);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Failed to download report"));
+            return ResponseEntity.badRequest().body(("Failed to download report").getBytes(StandardCharsets.UTF_8));
         }
     }
     
     @PostMapping("/schedule")
     public ResponseEntity<?> scheduleReport(@RequestBody Map<String, Object> scheduleData) {
         try {
-            reportService.scheduleReport(scheduleData);
-            return ResponseEntity.ok(Map.of("success", true));
+            Map<String, Object> schedule = reportService.scheduleReport(scheduleData);
+            return ResponseEntity.ok(Map.of("data", schedule));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to schedule report"));
         }
@@ -98,8 +104,8 @@ public class ReportController {
     @PutMapping("/schedule/{id}")
     public ResponseEntity<?> updateSchedule(@PathVariable String id, @RequestBody Map<String, Object> scheduleData) {
         try {
-            reportService.updateSchedule(id, scheduleData);
-            return ResponseEntity.ok(Map.of("success", true));
+            Map<String, Object> schedule = reportService.updateSchedule(id, scheduleData);
+            return ResponseEntity.ok(Map.of("data", schedule));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update schedule"));
         }

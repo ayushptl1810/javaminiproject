@@ -2,11 +2,14 @@ package com.subsentry.dao;
 
 import com.subsentry.model.User;
 import com.subsentry.util.DatabaseConnection;
+import org.springframework.stereotype.Repository;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class UserDAO {
     @SuppressWarnings("CallToPrintStackTrace")
     public boolean createUser(User user) {

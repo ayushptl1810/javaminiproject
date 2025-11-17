@@ -1,41 +1,54 @@
 package com.subsentry.util;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+@Component
 public class DatabaseConnection {
-    private static final String URL = "jdbc:mysql://192.168.1.26:3306/subsentry";
-    private static final String USERNAME = "teamuser";
-    private static final String PASSWORD = "pass_0612";
-    
-    private static Connection connection = null;
-    
-    public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-                System.out.println("Database connected successfully!");
-            } catch (ClassNotFoundException e) {
-                System.out.println("MySQL JDBC Driver not found.");
-                e.printStackTrace();
-            } catch (SQLException e) {
-                System.out.println("Connection to database failed!");
-                e.printStackTrace();
-            }
+
+    private static String url;
+    private static String username;
+    private static String password;
+    private static Connection connection;
+
+    public DatabaseConnection(
+            @Value("${spring.datasource.url}") String url,
+            @Value("${spring.datasource.username}") String username,
+            @Value("${spring.datasource.password}") String password) {
+        DatabaseConnection.url = url;
+        DatabaseConnection.username = username;
+        DatabaseConnection.password = password;
+    }
+
+    @PostConstruct
+    public void init() {
+        // Ensures driver class is loaded once
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("MySQL JDBC Driver not found", e);
+        }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = DriverManager.getConnection(url, username, password);
         }
         return connection;
     }
-    
-    public static void closeConnection() {
+
+    @PreDestroy
+    public void closeConnection() {
         if (connection != null) {
             try {
                 connection.close();
-                System.out.println("Database connection closed.");
-            } catch (SQLException e) {
-                System.out.println("Error closing database connection!");
-                e.printStackTrace();
+            } catch (SQLException ignored) {
             }
         }
     }

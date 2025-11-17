@@ -1,39 +1,42 @@
 import { useState } from "react";
 import { useQuery } from "react-query";
-import { 
-  FileText, 
-  Download, 
-  Calendar, 
+import {
+  FileText,
+  Download,
+  Calendar,
   Filter,
   Plus,
   Eye,
   Trash2,
-  Clock
+  Clock,
 } from "lucide-react";
 import { reportAPI } from "../services/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ReportGenerator from "../components/reports/ReportGenerator";
+import ReportTemplatePreview from "../components/reports/ReportTemplatePreview";
 
 const Reports = () => {
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   // Fetch reports
-  const { data: reports, isLoading, refetch } = useQuery(
-    "reports",
-    () => reportAPI.getReports(),
-    {
-      select: (data) => {
-        // Handle backend response format: { data: { data: [...] } }
-        if (data?.data?.data) return data.data.data;
-        if (data?.data && Array.isArray(data.data)) return data.data;
-        return [];
-      },
-    }
-  );
+  const {
+    data: reports,
+    isLoading,
+    refetch,
+  } = useQuery("reports", () => reportAPI.getReports(), {
+    select: (data) => {
+      // Handle backend response format: { data: { data: [...] } }
+      if (data?.data?.data) return data.data.data;
+      if (data?.data && Array.isArray(data.data)) return data.data;
+      return [];
+    },
+  });
 
   // Fetch scheduled reports
-  const { data: scheduledReports } = useQuery(
+  const { data: scheduledReports, refetch: refetchScheduled } = useQuery(
     "scheduled-reports",
     () => reportAPI.getScheduledReports(),
     {
@@ -49,10 +52,9 @@ const Reports = () => {
   const handleDownloadReport = async (reportId, format = "pdf") => {
     try {
       const response = await reportAPI.downloadReport(reportId, format);
-      // Create blob and download
-      const blob = new Blob([response.data]);
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `report-${reportId}.${format}`;
       document.body.appendChild(a);
@@ -71,6 +73,21 @@ const Reports = () => {
     } catch (error) {
       console.error("Failed to delete report:", error);
     }
+  };
+
+  const handleDeleteSchedule = async (scheduleId) => {
+    try {
+      await reportAPI.deleteSchedule(scheduleId);
+      refetchScheduled();
+    } catch (error) {
+      console.error("Failed to delete schedule:", error);
+    }
+  };
+
+  const handleUseTemplate = (template) => {
+    setSelectedReport(template);
+    setIsPreviewOpen(false);
+    setIsGeneratorOpen(true);
   };
 
   if (isLoading) {
@@ -111,7 +128,8 @@ const Reports = () => {
           {[
             {
               title: "Monthly Summary",
-              description: "Overview of all subscriptions and spending for the current month",
+              description:
+                "Overview of all subscriptions and spending for the current month",
               icon: Calendar,
               color: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
             },
@@ -127,31 +145,13 @@ const Reports = () => {
               icon: FileText,
               color: "text-purple-600 bg-purple-100 dark:bg-purple-900/20",
             },
-            {
-              title: "Tax Report",
-              description: "Subscription expenses organized for tax purposes",
-              icon: FileText,
-              color: "text-orange-600 bg-orange-100 dark:bg-orange-900/20",
-            },
-            {
-              title: "Cost Optimization",
-              description: "Recommendations for reducing subscription costs",
-              icon: FileText,
-              color: "text-red-600 bg-red-100 dark:bg-red-900/20",
-            },
-            {
-              title: "Custom Report",
-              description: "Build your own report with custom filters and sections",
-              icon: Plus,
-              color: "text-gray-600 bg-gray-100 dark:bg-gray-900/20",
-            },
           ].map((template, index) => (
             <div
               key={index}
               className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               onClick={() => {
-                setSelectedReport(template);
-                setIsGeneratorOpen(true);
+                setPreviewTemplate(template);
+                setIsPreviewOpen(true);
               }}
             >
               <div className="flex items-center mb-3">
@@ -191,7 +191,8 @@ const Reports = () => {
                       {report.name}
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Generated on {new Date(report.createdAt).toLocaleDateString()}
+                      Generated on{" "}
+                      {new Date(report.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -224,7 +225,9 @@ const Reports = () => {
         ) : (
           <div className="text-center py-8">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No reports generated yet</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              No reports generated yet
+            </p>
           </div>
         )}
       </div>
@@ -250,20 +253,28 @@ const Reports = () => {
                       {scheduled.name}
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Runs {scheduled.frequency} • Next: {new Date(scheduled.nextRun).toLocaleDateString()}
+                      Runs {scheduled.frequency} • Next:{" "}
+                      {new Date(scheduled.nextRun).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handleDownloadReport(scheduled.id)}
-                    className="p-2 text-blue-600 hover:text-blue-700"
-                    title="Download Latest Report"
+                    onClick={() =>
+                      handleDownloadReport(scheduled.reportId || scheduled.id)
+                    }
+                    disabled={!scheduled.reportId}
+                    className="p-2 text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={
+                      scheduled.reportId
+                        ? "Download Latest Report"
+                        : "No report available yet"
+                    }
                   >
                     <Download className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteReport(scheduled.id)}
+                    onClick={() => handleDeleteSchedule(scheduled.id)}
                     className="p-2 text-red-600 hover:text-red-700"
                     title="Delete Schedule"
                   >
@@ -289,6 +300,15 @@ const Reports = () => {
           setIsGeneratorOpen(false);
           setSelectedReport(null);
         }}
+      />
+      <ReportTemplatePreview
+        isOpen={isPreviewOpen}
+        template={previewTemplate}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewTemplate(null);
+        }}
+        onUseTemplate={handleUseTemplate}
       />
     </div>
   );

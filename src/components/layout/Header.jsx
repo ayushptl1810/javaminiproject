@@ -5,14 +5,12 @@ import {
   Sun, 
   Moon, 
   LogOut, 
-  Settings,
   User,
   ChevronDown
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useNotification } from "../../contexts/NotificationContext";
-import { clsx } from "clsx";
 
 const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -113,16 +111,6 @@ const Header = () => {
                       <User className="mr-3 h-4 w-4" />
                       Profile
                     </a>
-                    
-                    <a
-                      href="/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <Settings className="mr-3 h-4 w-4" />
-                      Settings
-                    </a>
-                    
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"

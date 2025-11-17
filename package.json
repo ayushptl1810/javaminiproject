@@ -14,9 +14,11 @@
     "axios": "^1.6.2",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
+    "exceljs": "^4.4.0",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
+    "react-datepicker": "^8.9.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
@@ -25,8 +27,7 @@
     "react-router-dom": "^6.20.1",
     "react-select": "^5.8.0",
     "recharts": "^2.8.0",
-    "tailwindcss": "^4.1.15",
-    "xlsx": "^0.18.5"
+    "tailwindcss": "^4.1.15"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
