@@ -1,13 +1,23 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 const CategoryBreakdownChart = ({ data }) => {
-  // Mock data - in a real app, this would come from props
-  const chartData = [
-    { name: "Streaming", value: 45, color: "#3B82F6" },
-    { name: "Software", value: 30, color: "#10B981" },
-    { name: "Cloud Services", value: 15, color: "#F59E0B" },
-    { name: "Gym/Fitness", value: 10, color: "#EF4444" },
-  ];
+  const chartData = Array.isArray(data?.categories)
+    ? data.categories.map((entry, index) => ({
+        name: entry.name ?? entry.category ?? `Category ${index + 1}`,
+        value:
+          typeof entry.value === "number"
+            ? entry.value
+            : typeof entry.amount === "number"
+            ? entry.amount
+            : 0,
+      }))
+    : [];
 
   const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"];
 
@@ -25,6 +35,16 @@ const CategoryBreakdownChart = ({ data }) => {
     }
     return null;
   };
+
+  if (!chartData.length) {
+    return (
+      <div className="h-64 flex items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-center px-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Add subscriptions to view category insights.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-64">

@@ -2,24 +2,28 @@ package com.subsentry.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
-import com.lowagie.text.Chunk;
 import com.lowagie.text.pdf.PdfWriter;
+import com.subsentry.dao.ReportDAO;
+import com.subsentry.dao.ScheduledReportDAO;
+import com.subsentry.model.GeneratedReport;
+import com.subsentry.model.ScheduledReport;
 import com.subsentry.model.Subscription;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,74 +32,62 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
 
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
-
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final SubscriptionService subscriptionService;
     private final AnalyticsService analyticsService;
-    private final List<Map<String, Object>> generatedReports = new CopyOnWriteArrayList<>();
-    private final List<Map<String, Object>> scheduledReports = new CopyOnWriteArrayList<>();
+    private final ReportDAO reportDAO;
+    private final ScheduledReportDAO scheduledReportDAO;
 
-    public ReportService(SubscriptionService subscriptionService, AnalyticsService analyticsService) {
+    public ReportService(SubscriptionService subscriptionService,
+                         AnalyticsService analyticsService,
+                         ReportDAO reportDAO,
+                         ScheduledReportDAO scheduledReportDAO) {
         this.subscriptionService = subscriptionService;
         this.analyticsService = analyticsService;
+        this.reportDAO = reportDAO;
+        this.scheduledReportDAO = scheduledReportDAO;
     }
 
-    public Map<String, Object> getReports() {
-        Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> orderedReports = new ArrayList<>(generatedReports);
-        orderedReports.sort((r1, r2) -> {
-            LocalDateTime first = parseDateTime((String) r1.get("createdAt"));
-            LocalDateTime second = parseDateTime((String) r2.get("createdAt"));
-            return second.compareTo(first);
-        });
-        result.put("reports", orderedReports);
-        return result;
+    public List<GeneratedReport> getReports(String userId) {
+        return reportDAO.findByUserId(userId);
     }
 
-    public Map<String, Object> generateReport(Map<String, Object> reportData) {
+    public GeneratedReport generateReport(String userId, Map<String, Object> reportData) {
         Map<String, Object> filters = extractFilters(reportData);
-        List<Subscription> subscriptions = applyFilters(filters);
+        List<Subscription> subscriptions = applyFilters(userId, filters);
 
         String type = String.valueOf(reportData.getOrDefault("type", "summary"));
         Map<String, Object> content = switch (type) {
             case "category" -> buildCategoryBreakdownReport(subscriptions);
             case "annual" -> buildAnnualProjectionReport(subscriptions);
-            default -> buildMonthlySummaryReport(subscriptions);
+            default -> buildMonthlySummaryReport(userId, subscriptions);
         };
 
-        Map<String, Object> report = new HashMap<>();
-        report.put("id", "report-" + System.currentTimeMillis());
-        report.put("name", reportData.getOrDefault("name", "Generated Report"));
-        report.put("type", type);
-        report.put("format", reportData.getOrDefault("format", "pdf"));
-        report.put("status", "completed");
-        report.put("createdAt", ISO_FORMATTER.format(LocalDateTime.now()));
-        report.put("filters", filters);
-        report.put("content", content);
+        GeneratedReport report = new GeneratedReport();
+        report.setUserId(userId);
+        report.setName((String) reportData.getOrDefault("name", "Generated Report"));
+        report.setType(type);
+        report.setFormat(String.valueOf(reportData.getOrDefault("format", "pdf")));
+        report.setStatus("completed");
+        report.setFilters(filters);
+        report.setContent(content);
 
-        generatedReports.add(0, report);
-        if (generatedReports.size() > 50) {
-            generatedReports.remove(generatedReports.size() - 1);
-        }
-
-        return report;
+        return reportDAO.save(report);
     }
 
-    public Map<String, Object> getScheduledReports() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("reports", new ArrayList<>(scheduledReports));
-        return result;
+    public List<ScheduledReport> getScheduledReports(String userId) {
+        return scheduledReportDAO.findByUserId(userId);
     }
 
-    public void deleteReport(String id) {
-        generatedReports.removeIf(report -> Objects.equals(report.get("id"), id));
+    public void deleteReport(String userId, String id) {
+        reportDAO.delete(userId, id);
     }
 
     public Map<String, Object> getTemplates() {
@@ -113,74 +105,100 @@ public class ReportService {
         return result;
     }
 
-    public Map<String, Object> getReport(String id) {
-        return generatedReports.stream()
-                .filter(report -> Objects.equals(report.get("id"), id))
-                .findFirst()
-                .orElse(Map.of("id", id, "status", "not_found"));
+    public GeneratedReport getReport(String userId, String id) {
+        return reportDAO.findById(userId, id)
+                .orElseGet(() -> {
+                    GeneratedReport missing = new GeneratedReport();
+                    missing.setId(id);
+                    missing.setUserId(userId);
+                    missing.setStatus("not_found");
+                    return missing;
+                });
     }
 
-    public byte[] downloadReport(String id, String format) {
-        Map<String, Object> report = getReport(id);
+    public byte[] downloadReport(String userId, String id, String format) {
+        GeneratedReport report = getReport(userId, id);
+        if (!Objects.equals(report.getId(), id) || report.getContent() == null) {
+            return "{\"error\":\"Report not found\"}".getBytes(StandardCharsets.UTF_8);
+        }
         if ("pdf".equalsIgnoreCase(format)) {
             try {
                 return buildPdfDocument(report);
             } catch (DocumentException | IOException e) {
-                throw new RuntimeException("Failed to generate PDF report", e);
+                throw new IllegalStateException("Failed to generate PDF report", e);
             }
         }
         try {
             return OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                     .writeValueAsBytes(Map.of(
                             "metadata", Map.of(
-                                    "id", report.get("id"),
-                                    "name", report.get("name"),
-                                    "type", report.get("type"),
+                                    "id", report.getId(),
+                                    "name", report.getName(),
+                                    "type", report.getType(),
                                     "format", format,
-                                    "createdAt", report.get("createdAt")
+                                    "createdAt", report.getCreatedAt()
                             ),
-                            "content", report.get("content")
+                            "content", report.getContent()
                     ));
         } catch (JsonProcessingException e) {
             return "{\"error\":\"Report content unavailable\"}".getBytes(StandardCharsets.UTF_8);
         }
     }
 
-    public Map<String, Object> scheduleReport(Map<String, Object> scheduleData) {
-        Map<String, Object> schedule = new HashMap<>();
-        schedule.put("id", "schedule-" + System.currentTimeMillis());
-        schedule.put("name", scheduleData.getOrDefault("name", "Scheduled Report"));
-        schedule.put("frequency", scheduleData.getOrDefault("frequency", "monthly"));
-        schedule.put("dayOfPeriod", scheduleData.getOrDefault("dayOfPeriod", 1));
-        schedule.put("emailDelivery", scheduleData.getOrDefault("emailDelivery", false));
-        schedule.put("reportId", scheduleData.get("reportId"));
-        schedule.put("type", scheduleData.getOrDefault("type", "summary"));
-        schedule.put("filters", scheduleData.getOrDefault("filters", Map.of()));
-        schedule.put("nextRun", ISO_FORMATTER.format(calculateNextRun(
-                (String) schedule.get("frequency"),
-                ((Number) schedule.get("dayOfPeriod")).intValue()
-        )));
-
-        scheduledReports.add(schedule);
-        return schedule;
-    }
-
-    public Map<String, Object> updateSchedule(String id, Map<String, Object> scheduleData) {
-        for (Map<String, Object> schedule : scheduledReports) {
-            if (Objects.equals(schedule.get("id"), id)) {
-                schedule.putAll(scheduleData);
-                schedule.put("nextRun", ISO_FORMATTER.format(calculateNextRun(
-                        (String) schedule.getOrDefault("frequency", "monthly"),
-                        ((Number) schedule.getOrDefault("dayOfPeriod", 1)).intValue()
-                )));
-                return schedule;
-            }
+    public ScheduledReport scheduleReport(String userId, Map<String, Object> scheduleData) {
+        ScheduledReport schedule = new ScheduledReport();
+        schedule.setUserId(userId);
+        schedule.setName(String.valueOf(scheduleData.getOrDefault("name", "Scheduled Report")));
+        schedule.setFrequency(String.valueOf(scheduleData.getOrDefault("frequency", "monthly")));
+        schedule.setDayOfPeriod(((Number) scheduleData.getOrDefault("dayOfPeriod", 1)).intValue());
+        schedule.setEmailDelivery(Boolean.TRUE.equals(scheduleData.get("emailDelivery")));
+        schedule.setReportId((String) scheduleData.get("reportId"));
+        schedule.setType(String.valueOf(scheduleData.getOrDefault("type", "summary")));
+        Object filters = scheduleData.get("filters");
+        if (filters instanceof Map<?, ?> map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typed = (Map<String, Object>) map;
+            schedule.setFilters(typed);
+        } else {
+            schedule.setFilters(Map.of());
         }
-        return Map.of("id", id, "status", "not_found");
+        schedule.setNextRun(calculateNextRun(schedule.getFrequency(), schedule.getDayOfPeriod()));
+        schedule.setCreatedAt(LocalDateTime.now());
+        schedule.setUpdatedAt(LocalDateTime.now());
+        return scheduledReportDAO.save(schedule);
     }
 
-    public void deleteSchedule(String id) {
-        scheduledReports.removeIf(schedule -> Objects.equals(schedule.get("id"), id));
+    public ScheduledReport updateSchedule(String userId, String id, Map<String, Object> scheduleData) {
+        Optional<ScheduledReport> existing = scheduledReportDAO.findById(userId, id);
+        if (existing.isEmpty()) {
+            ScheduledReport missing = new ScheduledReport();
+            missing.setId(id);
+            missing.setUserId(userId);
+            missing.setName("not_found");
+            return missing;
+        }
+        ScheduledReport schedule = existing.get();
+        schedule.setName(String.valueOf(scheduleData.getOrDefault("name", schedule.getName())));
+        schedule.setFrequency(String.valueOf(scheduleData.getOrDefault("frequency", schedule.getFrequency())));
+        schedule.setDayOfPeriod(((Number) scheduleData.getOrDefault("dayOfPeriod", schedule.getDayOfPeriod())).intValue());
+        schedule.setEmailDelivery(
+                scheduleData.get("emailDelivery") != null
+                        ? Boolean.parseBoolean(scheduleData.get("emailDelivery").toString())
+                        : schedule.isEmailDelivery());
+        schedule.setReportId((String) scheduleData.getOrDefault("reportId", schedule.getReportId()));
+        schedule.setType(String.valueOf(scheduleData.getOrDefault("type", schedule.getType())));
+        Object filters = scheduleData.get("filters");
+        if (filters instanceof Map<?, ?> filterMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typed = (Map<String, Object>) filterMap;
+            schedule.setFilters(typed);
+        }
+        schedule.setNextRun(calculateNextRun(schedule.getFrequency(), schedule.getDayOfPeriod()));
+        return scheduledReportDAO.update(schedule);
+    }
+
+    public void deleteSchedule(String userId, String id) {
+        scheduledReportDAO.delete(userId, id);
     }
 
     private Map<String, Object> extractFilters(Map<String, Object> reportData) {
@@ -200,8 +218,8 @@ public class ReportService {
         return filters;
     }
 
-    private List<Subscription> applyFilters(Map<String, Object> filters) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(null, null);
+    private List<Subscription> applyFilters(String userId, Map<String, Object> filters) {
+        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
 
         Object categoriesObj = filters.get("categories");
         if (categoriesObj instanceof List<?> categories && !categories.isEmpty()) {
@@ -238,9 +256,9 @@ public class ReportService {
         return subscriptions;
     }
 
-    private Map<String, Object> buildMonthlySummaryReport(List<Subscription> subscriptions) {
+    private Map<String, Object> buildMonthlySummaryReport(String userId, List<Subscription> subscriptions) {
         Map<String, Object> summary = buildSummaryMetrics(subscriptions);
-        Map<String, Object> overview = analyticsService.getOverview();
+        Map<String, Object> overview = analyticsService.getOverview(userId);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("headlineMetrics", summary);
@@ -329,7 +347,7 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    private byte[] buildPdfDocument(Map<String, Object> report) throws DocumentException, IOException {
+    private byte[] buildPdfDocument(GeneratedReport report) throws DocumentException, IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 40);
         PdfWriter.getInstance(document, out);
@@ -341,9 +359,9 @@ public class ReportService {
         Font monoFont = FontFactory.getFont(FontFactory.COURIER, 9);
 
         document.add(new Paragraph("SubSentry Report", titleFont));
-        document.add(new Paragraph(String.valueOf(report.get("name")), subtitleFont));
-        document.add(new Paragraph("Type: " + report.get("type"), bodyFont));
-        document.add(new Paragraph("Generated: " + report.get("createdAt"), bodyFont));
+        document.add(new Paragraph(String.valueOf(report.getName()), subtitleFont));
+        document.add(new Paragraph("Type: " + report.getType(), bodyFont));
+        document.add(new Paragraph("Generated: " + report.getCreatedAt(), bodyFont));
         document.add(Chunk.NEWLINE);
 
         document.add(new Paragraph("Overview", subtitleFont));
@@ -352,7 +370,7 @@ public class ReportService {
 
         document.add(new Paragraph("Content", subtitleFont));
         String prettyContent = OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(report.get("content"));
+                .writeValueAsString(report.getContent());
         for (String line : prettyContent.split("\n")) {
             document.add(new Paragraph(line, monoFont));
         }

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { X } from "lucide-react";
 import { subscriptionAPI } from "../../services/api";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../contexts/AuthContext";
 
 const SubscriptionModal = ({
   isOpen,
@@ -11,6 +12,8 @@ const SubscriptionModal = ({
   subscription = null,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const {
     register,
@@ -79,27 +82,45 @@ const SubscriptionModal = ({
     return newDate;
   };
 
+  const toIsoString = (value) => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  };
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
       const subscriptionData = {
         ...data,
-        nextRenewalDate: calculateNextRenewalDate(
-          data.startDate,
-          data.billingCycle
+        startDate: toIsoString(data.startDate),
+        nextRenewalDate: toIsoString(
+          calculateNextRenewalDate(data.startDate, data.billingCycle)
         ),
         amount: parseFloat(data.amount),
       };
 
+      if (!userId) {
+        toast.error("Missing user context. Please log in again.");
+        return;
+      }
+
       if (subscription) {
-        await subscriptionAPI.update(subscription.id, subscriptionData);
+        await subscriptionAPI.update(subscription.id, subscriptionData, {
+          userId,
+        });
         toast.success("Subscription updated successfully!");
       } else {
-        await subscriptionAPI.create(subscriptionData);
+        await subscriptionAPI.create(subscriptionData, { userId });
         toast.success("Subscription added successfully!");
       }
 
       onSuccess();
+      window.dispatchEvent(
+        new CustomEvent("subscriptions:changed", {
+          detail: { timestamp: Date.now() },
+        })
+      );
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to save subscription"

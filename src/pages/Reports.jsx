@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "react-query";
 import {
   FileText,
@@ -14,21 +14,24 @@ import { reportAPI } from "../services/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ReportGenerator from "../components/reports/ReportGenerator";
 import ReportTemplatePreview from "../components/reports/ReportTemplatePreview";
+import { useAuth } from "../contexts/AuthContext";
 
 const Reports = () => {
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
 
   // Fetch reports
   const {
     data: reports,
     isLoading,
     refetch,
-  } = useQuery("reports", () => reportAPI.getReports(), {
+  } = useQuery(["reports", userId], () => reportAPI.getReports({ userId }), {
+    enabled: !!userId,
     select: (data) => {
-      // Handle backend response format: { data: { data: [...] } }
       if (data?.data?.data) return data.data.data;
       if (data?.data && Array.isArray(data.data)) return data.data;
       return [];
@@ -36,10 +39,15 @@ const Reports = () => {
   });
 
   // Fetch scheduled reports
-  const { data: scheduledReports, refetch: refetchScheduled } = useQuery(
-    "scheduled-reports",
-    () => reportAPI.getScheduledReports(),
+  const {
+    data: scheduledReports,
+    refetch: refetchScheduled,
+    isLoading: scheduledLoading,
+  } = useQuery(
+    ["scheduled-reports", userId],
+    () => reportAPI.getScheduledReports({ userId }),
     {
+      enabled: !!userId,
       select: (data) => {
         // Handle backend response format: { data: { data: [...] } }
         if (data?.data?.data) return data.data.data;
@@ -49,9 +57,21 @@ const Reports = () => {
     }
   );
 
+  useEffect(() => {
+    if (!userId) return;
+    const handler = () => {
+      refetch();
+      refetchScheduled();
+    };
+    window.addEventListener("subscriptions:changed", handler);
+    return () => window.removeEventListener("subscriptions:changed", handler);
+  }, [userId, refetch, refetchScheduled]);
+
   const handleDownloadReport = async (reportId, format = "pdf") => {
     try {
-      const response = await reportAPI.downloadReport(reportId, format);
+      const response = await reportAPI.downloadReport(reportId, format, {
+        userId,
+      });
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -68,7 +88,7 @@ const Reports = () => {
 
   const handleDeleteReport = async (reportId) => {
     try {
-      await reportAPI.deleteReport(reportId);
+      await reportAPI.deleteReport(reportId, { userId });
       refetch();
     } catch (error) {
       console.error("Failed to delete report:", error);
@@ -77,7 +97,7 @@ const Reports = () => {
 
   const handleDeleteSchedule = async (scheduleId) => {
     try {
-      await reportAPI.deleteSchedule(scheduleId);
+      await reportAPI.deleteSchedule(scheduleId, { userId });
       refetchScheduled();
     } catch (error) {
       console.error("Failed to delete schedule:", error);
@@ -90,7 +110,7 @@ const Reports = () => {
     setIsGeneratorOpen(true);
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading || scheduledLoading || !userId) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
@@ -300,6 +320,7 @@ const Reports = () => {
           setIsGeneratorOpen(false);
           setSelectedReport(null);
         }}
+        userId={userId}
       />
       <ReportTemplatePreview
         isOpen={isPreviewOpen}

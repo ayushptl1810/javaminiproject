@@ -1,13 +1,25 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const BillingCycleChart = ({ data }) => {
-  // Mock data - in a real app, this would come from props
-  const chartData = [
-    { cycle: "Monthly", count: 8, amount: 120 },
-    { cycle: "Quarterly", count: 3, amount: 90 },
-    { cycle: "Annual", count: 2, amount: 200 },
-    { cycle: "Semi-Annual", count: 1, amount: 50 },
-  ];
+  const chartData = Array.isArray(data?.cycles)
+    ? data.cycles.map((entry) => ({
+        cycle: entry.name ?? entry.cycle ?? "Cycle",
+        count:
+          typeof entry.value === "number"
+            ? entry.value
+            : typeof entry.count === "number"
+            ? entry.count
+            : 0,
+      }))
+    : [];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -26,10 +38,23 @@ const BillingCycleChart = ({ data }) => {
     return null;
   };
 
+  if (!chartData.length) {
+    return (
+      <div className="h-64 flex items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-center px-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Add subscriptions to analyze billing cycles.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <BarChart
+          data={chartData}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis 
             dataKey="cycle" 

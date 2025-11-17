@@ -16,9 +16,9 @@ public class AnalyticsController {
     private AnalyticsService analyticsService;
     
     @GetMapping("/overview")
-    public ResponseEntity<?> getOverview() {
+    public ResponseEntity<?> getOverview(@RequestParam String userId) {
         try {
-            Map<String, Object> overview = analyticsService.getOverview();
+            Map<String, Object> overview = analyticsService.getOverview(userId);
             return ResponseEntity.ok(Map.of("data", overview));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch analytics overview"));
@@ -26,9 +26,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/spending-trend")
-    public ResponseEntity<?> getSpendingTrend() {
+    public ResponseEntity<?> getSpendingTrend(@RequestParam String userId) {
         try {
-            Map<String, Object> trend = analyticsService.getSpendingTrend();
+            Map<String, Object> trend = analyticsService.getSpendingTrend(userId);
             return ResponseEntity.ok(Map.of("data", trend));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch spending trend"));
@@ -36,9 +36,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/category-breakdown")
-    public ResponseEntity<?> getCategoryBreakdown() {
+    public ResponseEntity<?> getCategoryBreakdown(@RequestParam String userId) {
         try {
-            Map<String, Object> breakdown = analyticsService.getCategoryBreakdown();
+            Map<String, Object> breakdown = analyticsService.getCategoryBreakdown(userId);
             return ResponseEntity.ok(Map.of("data", breakdown));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch category breakdown"));
@@ -46,9 +46,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/billing-cycle")
-    public ResponseEntity<?> getBillingCycleAnalysis() {
+    public ResponseEntity<?> getBillingCycleAnalysis(@RequestParam String userId) {
         try {
-            Map<String, Object> analysis = analyticsService.getBillingCycleAnalysis();
+            Map<String, Object> analysis = analyticsService.getBillingCycleAnalysis(userId);
             return ResponseEntity.ok(Map.of("data", analysis));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch billing cycle analysis"));
@@ -56,9 +56,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/top-subscriptions")
-    public ResponseEntity<?> getTopSubscriptions() {
+    public ResponseEntity<?> getTopSubscriptions(@RequestParam String userId) {
         try {
-            Map<String, Object> topSubs = analyticsService.getTopSubscriptions();
+            Map<String, Object> topSubs = analyticsService.getTopSubscriptions(userId);
             return ResponseEntity.ok(Map.of("data", topSubs));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch top subscriptions"));
@@ -66,9 +66,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/projections")
-    public ResponseEntity<?> getProjections() {
+    public ResponseEntity<?> getProjections(@RequestParam String userId) {
         try {
-            Map<String, Object> projections = analyticsService.getProjections();
+            Map<String, Object> projections = analyticsService.getProjections(userId);
             return ResponseEntity.ok(Map.of("data", projections));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch projections"));
@@ -76,9 +76,9 @@ public class AnalyticsController {
     }
     
     @GetMapping("/insights")
-    public ResponseEntity<?> getInsights() {
+    public ResponseEntity<?> getInsights(@RequestParam String userId) {
         try {
-            Map<String, Object> insights = analyticsService.getInsights();
+            Map<String, Object> insights = analyticsService.getInsights(userId);
             return ResponseEntity.ok(Map.of("data", insights));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch insights"));
@@ -86,11 +86,12 @@ public class AnalyticsController {
     }
     
     @PostMapping("/compare")
-    public ResponseEntity<?> compareSubscriptions(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> compareSubscriptions(@RequestParam String userId,
+                                                  @RequestBody Map<String, Object> request) {
         try {
             @SuppressWarnings("unchecked")
             java.util.List<String> subscriptionIds = (java.util.List<String>) request.get("subscriptionIds");
-            Map<String, Object> comparison = analyticsService.compareSubscriptions(subscriptionIds);
+            Map<String, Object> comparison = analyticsService.compareSubscriptions(userId, subscriptionIds);
             return ResponseEntity.ok(Map.of("data", comparison));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to compare subscriptions"));

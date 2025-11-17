@@ -69,8 +69,10 @@ export const AuthProvider = ({ children }) => {
             type: "AUTH_SUCCESS",
             payload: { user: response.data.user, token },
           });
+          sessionStorage.setItem("user", JSON.stringify(response.data.user));
         } catch (error) {
           sessionStorage.removeItem("token");
+          sessionStorage.removeItem("user");
           dispatch({ type: "AUTH_FAILURE", payload: error.response?.data?.message || "Authentication failed" });
         }
       } else {
@@ -88,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       const { user, token } = response.data;
       
       sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(user));
       dispatch({
         type: "AUTH_SUCCESS",
         payload: { user, token },
@@ -98,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       const message = error.response?.data?.message || "Login failed";
       dispatch({ type: "AUTH_FAILURE", payload: message });
+      sessionStorage.removeItem("user");
       toast.error(message);
       return { success: false, error: message };
     }
@@ -110,6 +114,7 @@ export const AuthProvider = ({ children }) => {
       const { user, token } = response.data;
       
       sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(user));
       dispatch({
         type: "AUTH_SUCCESS",
         payload: { user, token },
@@ -120,6 +125,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       const message = error.response?.data?.message || "Signup failed";
       dispatch({ type: "AUTH_FAILURE", payload: message });
+      sessionStorage.removeItem("user");
       toast.error(message);
       return { success: false, error: message };
     }
@@ -127,6 +133,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     dispatch({ type: "LOGOUT" });
     toast.success("Logged out successfully");
   };
@@ -135,6 +142,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.updateProfile(profileData);
       dispatch({ type: "UPDATE_USER", payload: response.data.user });
+      sessionStorage.setItem("user", JSON.stringify(response.data.user));
       toast.success("Profile updated successfully");
       return { success: true };
     } catch (error) {

@@ -4,13 +4,14 @@ import { useQuery } from "react-query";
 import { subscriptionAPI } from "../../services/api";
 import LoadingSpinner from "../common/LoadingSpinner";
 
-const ComparisonTool = ({ isOpen, onClose }) => {
+const ComparisonTool = ({ isOpen, onClose, userId }) => {
   const [selectedSubscriptions, setSelectedSubscriptions] = useState([]);
   
   const { data: subscriptions, isLoading } = useQuery(
-    "subscriptions",
-    () => subscriptionAPI.getAll(),
+    ["subscriptions", userId, "comparison"],
+    () => subscriptionAPI.getAll({ userId }),
     {
+      enabled: isOpen && !!userId,
       select: (data) => {
         // Handle backend response format: { data: { data: [...] } }
         if (data?.data?.data) return data.data.data;
@@ -50,7 +51,7 @@ const ComparisonTool = ({ isOpen, onClose }) => {
     return { totalMonthly, totalAnnual };
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !userId) return null;
 
   const { totalMonthly, totalAnnual } = calculateTotals();
 

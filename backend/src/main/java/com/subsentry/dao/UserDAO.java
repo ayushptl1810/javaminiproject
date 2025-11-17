@@ -80,4 +80,70 @@ public class UserDAO {
         }
         return users;
     }
+
+    @SuppressWarnings("CallToPrintStackTrace")
+    public User getUserById(String id) {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return mapUser(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("CallToPrintStackTrace")
+    public boolean updateUserSettings(User user) {
+        String sql = """
+                UPDATE users SET
+                    name = ?, default_currency = ?, timezone = ?, date_format = ?, bio = ?, location = ?,
+                    website = ?, avatar = ?, email_notifications = ?, browser_notifications = ?,
+                    renewal_reminders = ?, weekly_summary = ?
+                WHERE id = ?
+                """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, user.getName());
+            pstmt.setString(2, user.getDefaultCurrency());
+            pstmt.setString(3, user.getTimezone());
+            pstmt.setString(4, user.getDateFormat());
+            pstmt.setString(5, user.getBio());
+            pstmt.setString(6, user.getLocation());
+            pstmt.setString(7, user.getWebsite());
+            pstmt.setString(8, user.getAvatar());
+            pstmt.setBoolean(9, user.isEmailNotifications());
+            pstmt.setBoolean(10, user.isBrowserNotifications());
+            pstmt.setBoolean(11, user.isRenewalReminders());
+            pstmt.setBoolean(12, user.isWeeklySummary());
+            pstmt.setString(13, user.getId());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private User mapUser(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setId(rs.getString("id"));
+        user.setName(rs.getString("name"));
+        user.setEmail(rs.getString("email"));
+        user.setDefaultCurrency(rs.getString("default_currency"));
+        user.setTimezone(rs.getString("timezone"));
+        user.setDateFormat(rs.getString("date_format"));
+        user.setBio(rs.getString("bio"));
+        user.setLocation(rs.getString("location"));
+        user.setWebsite(rs.getString("website"));
+        user.setAvatar(rs.getString("avatar"));
+        user.setEmailNotifications(rs.getBoolean("email_notifications"));
+        user.setBrowserNotifications(rs.getBoolean("browser_notifications"));
+        user.setRenewalReminders(rs.getBoolean("renewal_reminders"));
+        user.setWeeklySummary(rs.getBoolean("weekly_summary"));
+        return user;
+    }
 }

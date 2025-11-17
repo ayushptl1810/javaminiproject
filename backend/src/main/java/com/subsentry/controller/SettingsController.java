@@ -16,9 +16,9 @@ public class SettingsController {
     private SettingsService settingsService;
     
     @GetMapping
-    public ResponseEntity<?> getSettings() {
+    public ResponseEntity<?> getSettings(@RequestParam String userId) {
         try {
-            Map<String, Object> settings = settingsService.getSettings();
+            Map<String, Object> settings = settingsService.getSettings(userId);
             return ResponseEntity.ok(Map.of("data", settings));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch settings"));
@@ -26,9 +26,10 @@ public class SettingsController {
     }
     
     @PutMapping
-    public ResponseEntity<?> updateSettings(@RequestBody Map<String, Object> settings) {
+    public ResponseEntity<?> updateSettings(@RequestParam String userId,
+                                            @RequestBody Map<String, Object> settings) {
         try {
-            settingsService.updateSettings(settings);
+            settingsService.updateSettings(userId, settings);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update settings"));
@@ -36,19 +37,20 @@ public class SettingsController {
     }
     
     @GetMapping("/categories")
-    public ResponseEntity<?> getCategories() {
+    public ResponseEntity<?> getCategories(@RequestParam String userId) {
         try {
-            Map<String, Object> categories = settingsService.getCategories();
-            return ResponseEntity.ok(Map.of("data", categories.get("categories")));
+            Map<String, Object> categories = settingsService.getCategories(userId);
+            return ResponseEntity.ok(Map.of("data", categories.get("available")));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch categories"));
         }
     }
     
     @PostMapping("/categories")
-    public ResponseEntity<?> addCategory(@RequestBody Map<String, Object> category) {
+    public ResponseEntity<?> addCategory(@RequestParam String userId,
+                                         @RequestBody Map<String, Object> category) {
         try {
-            settingsService.addCategory(category);
+            settingsService.addCategory(userId, category);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to add category"));
@@ -56,9 +58,11 @@ public class SettingsController {
     }
     
     @PutMapping("/categories/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable String id, @RequestBody Map<String, Object> category) {
+    public ResponseEntity<?> updateCategory(@RequestParam String userId,
+                                            @PathVariable String id,
+                                            @RequestBody Map<String, Object> category) {
         try {
-            settingsService.updateCategory(id, category);
+            settingsService.updateCategory(userId, id, category);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update category"));
@@ -66,9 +70,9 @@ public class SettingsController {
     }
     
     @DeleteMapping("/categories/{id}")
-    public ResponseEntity<?> deleteCategory(@PathVariable String id) {
+    public ResponseEntity<?> deleteCategory(@RequestParam String userId, @PathVariable String id) {
         try {
-            settingsService.deleteCategory(id);
+            settingsService.deleteCategory(userId, id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to delete category"));
@@ -86,10 +90,11 @@ public class SettingsController {
     }
     
     @PutMapping("/currency")
-    public ResponseEntity<?> updateCurrency(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> updateCurrency(@RequestParam String userId,
+                                            @RequestBody Map<String, Object> request) {
         try {
             String currency = (String) request.get("currency");
-            settingsService.updateCurrency(currency);
+            settingsService.updateCurrency(userId, currency);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update currency"));

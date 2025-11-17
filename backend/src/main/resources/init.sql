@@ -1,10 +1,10 @@
--- Create database (will be ignored if subsentry already provides the DB)
-CREATE DATABASE IF NOT EXISTS subsentry;
+DROP DATABASE IF EXISTS subsentry;
+CREATE DATABASE subsentry CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE subsentry;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id CHAR(36) PRIMARY KEY,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
     email VARCHAR(160) NOT NULL UNIQUE,
     password VARCHAR(120) NOT NULL,
@@ -26,36 +26,15 @@ CREATE TABLE IF NOT EXISTS users (
     weekly_summary TINYINT(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Optional sample user (remove in production)
-INSERT IGNORE INTO users (
-    id, name, email, password, default_currency, timezone, date_format,
-    email_verified, enabled, email_notifications, browser_notifications,
-    renewal_reminders, weekly_summary
-) VALUES (
-    '11111111-1111-1111-1111-111111111111',
-    'Test User',
-    'test@subsentry.com',
-    '$2a$10$7a71RJKVQ1BM8DT6vKrrOudeum5wW7/dwZ0pniS3pS3kMt2rtI8p6',
-    'USD',
-    'UTC',
-    'MM/DD/YYYY',
-    1,
-    1,
-    1,
-    1,
-    1,
-    0
-);
-
 -- Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     name VARCHAR(150) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     currency VARCHAR(10) DEFAULT 'USD',
     category VARCHAR(60),
-    billing_cycle ENUM('monthly','yearly','weekly','custom') DEFAULT 'monthly',
+    billing_cycle ENUM('weekly','monthly','quarterly','semi-annual','annual','yearly','custom') DEFAULT 'monthly',
     start_date DATETIME,
     next_renewal_date DATETIME,
     status VARCHAR(30) DEFAULT 'active',
@@ -68,10 +47,21 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- User categories table
+CREATE TABLE IF NOT EXISTS user_categories (
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_category (user_id, name),
+    CONSTRAINT fk_user_categories_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     type VARCHAR(40) NOT NULL,
     title VARCHAR(150),
     message TEXT NOT NULL,
@@ -83,8 +73,8 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Generated reports table
 CREATE TABLE IF NOT EXISTS generated_reports (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     name VARCHAR(150) NOT NULL,
     type VARCHAR(40) NOT NULL,
     format VARCHAR(20) DEFAULT 'pdf',
@@ -97,8 +87,9 @@ CREATE TABLE IF NOT EXISTS generated_reports (
 
 -- Scheduled reports table
 CREATE TABLE IF NOT EXISTS scheduled_reports (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    report_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
     name VARCHAR(150) NOT NULL,
     frequency ENUM('weekly','monthly','quarterly') DEFAULT 'monthly',
     day_of_period INT DEFAULT 1,
@@ -108,13 +99,14 @@ CREATE TABLE IF NOT EXISTS scheduled_reports (
     next_run TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_scheduled_reports_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_scheduled_reports_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_scheduled_reports_report FOREIGN KEY (report_id) REFERENCES generated_reports(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Analytics snapshots table (optional)
 CREATE TABLE IF NOT EXISTS analytics_snapshots (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY,
+    user_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     snapshot_type VARCHAR(40) NOT NULL,
     payload JSON NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

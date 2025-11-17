@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { X, FileText, Calendar, Filter, Download } from "lucide-react";
-import { reportAPI } from "../../services/api";
+import { reportAPI, settingsAPI } from "../../services/api";
 import { toast } from "react-hot-toast";
 import LoadingSpinner from "../common/LoadingSpinner";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
+const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportPreview, setReportPreview] = useState(null);
+  const [availableCategories, setAvailableCategories] = useState([]);
 
   const {
     register,
@@ -104,7 +105,24 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
     { value: "json", label: "JSON" },
   ];
 
-  const categories = [
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!userId || !isOpen) return;
+      try {
+        const response = await settingsAPI.getCategories({ userId });
+        const payload = response?.data?.data ?? response?.data ?? [];
+        setAvailableCategories(
+          Array.isArray(payload) && payload.length > 0 ? payload : []
+        );
+      } catch (error) {
+        console.error("Failed to load categories", error);
+        setAvailableCategories([]);
+      }
+    };
+    fetchCategories();
+  }, [userId, isOpen]);
+
+  const fallbackCategories = [
     "Streaming",
     "Software",
     "Cloud Services",
@@ -116,6 +134,8 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
     "Security",
     "Other",
   ];
+  const categories =
+    availableCategories.length > 0 ? availableCategories : fallbackCategories;
 
   const onSubmit = async (data) => {
     setIsGenerating(true);
@@ -127,7 +147,7 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
         categories: data.categories || [],
       };
 
-      const response = await reportAPI.generate(reportPayload);
+      const response = await reportAPI.generate(reportPayload, { userId });
       const generatedReport = response?.data?.data ?? response?.data;
 
       if (!generatedReport?.id) {
@@ -135,19 +155,22 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
       }
 
       if (data.scheduleFrequency && data.scheduleFrequency !== "none") {
-        await reportAPI.scheduleReport({
-          name: data.name,
-          frequency: data.scheduleFrequency,
-          dayOfPeriod: data.scheduleDay,
-          emailDelivery: data.emailDelivery,
-          reportId: generatedReport.id,
-          type: data.type,
-          filters: {
-            startDate: reportPayload.startDate,
-            endDate: reportPayload.endDate,
-            categories: reportPayload.categories,
+        await reportAPI.scheduleReport(
+          {
+            name: data.name,
+            frequency: data.scheduleFrequency,
+            dayOfPeriod: data.scheduleDay,
+            emailDelivery: data.emailDelivery,
+            reportId: generatedReport.id,
+            type: data.type,
+            filters: {
+              startDate: reportPayload.startDate,
+              endDate: reportPayload.endDate,
+              categories: reportPayload.categories,
+            },
           },
-        });
+          { userId }
+        );
       }
 
       toast.success("Report generated successfully!");
@@ -166,7 +189,7 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess }) => {
   const nextStep = () => setCurrentStep(currentStep + 1);
   const prevStep = () => setCurrentStep(currentStep - 1);
 
-  if (!isOpen) return null;
+  if (!isOpen || !userId) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">

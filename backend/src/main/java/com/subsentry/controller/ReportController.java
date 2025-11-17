@@ -19,39 +19,37 @@ public class ReportController {
     private ReportService reportService;
     
     @GetMapping
-    public ResponseEntity<?> getReports() {
+    public ResponseEntity<?> getReports(@RequestParam String userId) {
         try {
-            Map<String, Object> reports = reportService.getReports();
-            return ResponseEntity.ok(Map.of("data", reports.get("reports")));
+            return ResponseEntity.ok(Map.of("data", reportService.getReports(userId)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch reports"));
         }
     }
     
     @PostMapping("/generate")
-    public ResponseEntity<?> generateReport(@RequestBody Map<String, Object> reportData) {
+    public ResponseEntity<?> generateReport(@RequestParam String userId,
+                                            @RequestBody Map<String, Object> reportData) {
         try {
-            Map<String, Object> report = reportService.generateReport(reportData);
-            return ResponseEntity.ok(Map.of("data", report));
+            return ResponseEntity.ok(Map.of("data", reportService.generateReport(userId, reportData)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to generate report"));
         }
     }
     
     @GetMapping("/scheduled")
-    public ResponseEntity<?> getScheduledReports() {
+    public ResponseEntity<?> getScheduledReports(@RequestParam String userId) {
         try {
-            Map<String, Object> scheduled = reportService.getScheduledReports();
-            return ResponseEntity.ok(Map.of("data", scheduled.get("reports")));
+            return ResponseEntity.ok(Map.of("data", reportService.getScheduledReports(userId)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch scheduled reports"));
         }
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReport(@PathVariable String id) {
+    public ResponseEntity<?> deleteReport(@RequestParam String userId, @PathVariable String id) {
         try {
-            reportService.deleteReport(id);
+            reportService.deleteReport(userId, id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to delete report"));
@@ -69,19 +67,20 @@ public class ReportController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> getReport(@PathVariable String id) {
+    public ResponseEntity<?> getReport(@RequestParam String userId, @PathVariable String id) {
         try {
-            Map<String, Object> report = reportService.getReport(id);
-            return ResponseEntity.ok(Map.of("data", report));
+            return ResponseEntity.ok(Map.of("data", reportService.getReport(userId, id)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch report"));
         }
     }
     
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadReport(@PathVariable String id, @RequestParam(defaultValue = "pdf") String format) {
+    public ResponseEntity<byte[]> downloadReport(@RequestParam String userId,
+                                                 @PathVariable String id,
+                                                 @RequestParam(defaultValue = "pdf") String format) {
         try {
-            byte[] payload = reportService.downloadReport(id, format);
+            byte[] payload = reportService.downloadReport(userId, id, format);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + id + "." + format)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -92,29 +91,30 @@ public class ReportController {
     }
     
     @PostMapping("/schedule")
-    public ResponseEntity<?> scheduleReport(@RequestBody Map<String, Object> scheduleData) {
+    public ResponseEntity<?> scheduleReport(@RequestParam String userId,
+                                            @RequestBody Map<String, Object> scheduleData) {
         try {
-            Map<String, Object> schedule = reportService.scheduleReport(scheduleData);
-            return ResponseEntity.ok(Map.of("data", schedule));
+            return ResponseEntity.ok(Map.of("data", reportService.scheduleReport(userId, scheduleData)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to schedule report"));
         }
     }
     
     @PutMapping("/schedule/{id}")
-    public ResponseEntity<?> updateSchedule(@PathVariable String id, @RequestBody Map<String, Object> scheduleData) {
+    public ResponseEntity<?> updateSchedule(@RequestParam String userId,
+                                            @PathVariable String id,
+                                            @RequestBody Map<String, Object> scheduleData) {
         try {
-            Map<String, Object> schedule = reportService.updateSchedule(id, scheduleData);
-            return ResponseEntity.ok(Map.of("data", schedule));
+            return ResponseEntity.ok(Map.of("data", reportService.updateSchedule(userId, id, scheduleData)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update schedule"));
         }
     }
     
     @DeleteMapping("/schedule/{id}")
-    public ResponseEntity<?> deleteSchedule(@PathVariable String id) {
+    public ResponseEntity<?> deleteSchedule(@RequestParam String userId, @PathVariable String id) {
         try {
-            reportService.deleteSchedule(id);
+            reportService.deleteSchedule(userId, id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to delete schedule"));

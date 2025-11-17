@@ -43,7 +43,8 @@ const Profile = () => {
     const fetchActiveSubscriptions = async () => {
       setIsFetchingSubscriptions(true);
       try {
-        const response = await subscriptionAPI.getAll();
+        if (!user?.id) return;
+        const response = await subscriptionAPI.getAll({ userId: user.id });
         const payload = response?.data;
         const subscriptions = Array.isArray(payload?.data)
           ? payload.data
@@ -68,12 +69,14 @@ const Profile = () => {
       }
     };
 
-    fetchActiveSubscriptions();
+    if (user?.id) {
+      fetchActiveSubscriptions();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +84,10 @@ const Profile = () => {
     const fetchPreferences = async () => {
       setIsLoadingNotificationPrefs(true);
       try {
-        const response = await notificationAPI.getPreferences();
+        if (!user?.id) return;
+        const response = await notificationAPI.getPreferences({
+          userId: user.id,
+        });
         const payload = response?.data?.data ?? response?.data ?? {};
         const normalized = {
           emailNotifications:
@@ -117,12 +123,14 @@ const Profile = () => {
       }
     };
 
-    fetchPreferences();
+    if (user?.id) {
+      fetchPreferences();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user?.id]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -163,7 +171,10 @@ const Profile = () => {
   const saveNotificationPreferences = async () => {
     setIsSavingNotificationPrefs(true);
     try {
-      await notificationAPI.updatePreferences(notificationPreferences);
+      if (!user?.id) return;
+      await notificationAPI.updatePreferences(notificationPreferences, {
+        userId: user.id,
+      });
       toast.success("Notification preferences updated");
     } catch (error) {
       toast.error("Failed to update notification preferences");

@@ -1,82 +1,96 @@
 package com.subsentry.service;
 
+import com.subsentry.dao.NotificationDAO;
+import com.subsentry.dao.UserDAO;
+import com.subsentry.model.Notification;
+import com.subsentry.model.User;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class NotificationService {
-    
-    private List<Map<String, Object>> mockNotifications = new ArrayList<>();
-    
-    public NotificationService() {
-        initializeMockData();
+
+    private final NotificationDAO notificationDAO;
+    private final UserDAO userDAO;
+
+    public NotificationService(NotificationDAO notificationDAO, UserDAO userDAO) {
+        this.notificationDAO = notificationDAO;
+        this.userDAO = userDAO;
     }
-    
-    private void initializeMockData() {
-        Map<String, Object> notif1 = new HashMap<>();
-        notif1.put("id", "notif-1");
-        notif1.put("type", "renewal");
-        notif1.put("message", "Your Adobe Creative Cloud subscription renews tomorrow!");
-        notif1.put("date", LocalDateTime.now().minusDays(1));
-        notif1.put("read", false);
-        notif1.put("link", "/calendar");
-        mockNotifications.add(notif1);
-        
-        Map<String, Object> notif2 = new HashMap<>();
-        notif2.put("id", "notif-2");
-        notif2.put("type", "renewal");
-        notif2.put("message", "Spotify Premium renews in 2 days.");
-        notif2.put("date", LocalDateTime.now());
-        notif2.put("read", false);
-        notif2.put("link", "/calendar");
-        mockNotifications.add(notif2);
-        
-        Map<String, Object> notif3 = new HashMap<>();
-        notif3.put("id", "notif-3");
-        notif3.put("type", "info");
-        notif3.put("message", "Welcome to SubSentry! Explore your dashboard.");
-        notif3.put("date", LocalDateTime.now().minusDays(7));
-        notif3.put("read", true);
-        notif3.put("link", "/dashboard");
-        mockNotifications.add(notif3);
+
+    public List<Notification> getNotifications(String userId) {
+        return notificationDAO.findByUserId(userId);
     }
-    
-    public Map<String, Object> getNotifications() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("notifications", mockNotifications);
-        return result;
+
+    public void markAsRead(String userId, String id) {
+        notificationDAO.markAsRead(userId, id);
     }
-    
-    public void markAsRead(String id) {
-        mockNotifications.stream()
-                .filter(notif -> notif.get("id").equals(id))
-                .findFirst()
-                .ifPresent(notif -> notif.put("read", true));
+
+    public void markAllAsRead(String userId) {
+        notificationDAO.markAllAsRead(userId);
     }
-    
-    public void markAllAsRead() {
-        mockNotifications.forEach(notif -> notif.put("read", true));
+
+    public void deleteNotification(String userId, String id) {
+        notificationDAO.delete(userId, id);
     }
-    
-    public void deleteNotification(String id) {
-        mockNotifications.removeIf(notif -> notif.get("id").equals(id));
+
+    public void updatePreferences(String userId, Map<String, Object> preferences) {
+        User user = userDAO.getUserById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        boolean emailNotifications = getBoolean(preferences.get("emailNotifications"), true);
+        boolean browserNotifications = getBoolean(preferences.get("browserNotifications"), true);
+        boolean renewalReminders = getBoolean(preferences.get("renewalReminders"), true);
+        boolean weeklySummary = getBoolean(preferences.get("weeklySummary"), false);
+
+        user.setEmailNotifications(emailNotifications);
+        user.setBrowserNotifications(browserNotifications);
+        user.setRenewalReminders(renewalReminders);
+        user.setWeeklySummary(weeklySummary);
+
+        userDAO.updateUserSettings(user);
     }
-    
-    public void updatePreferences(Map<String, Object> preferences) {
-        System.out.println("Updating notification preferences: " + preferences);
-    }
-    
-    public Map<String, Object> getPreferences() {
+
+    public Map<String, Object> getPreferences(String userId) {
+        User user = userDAO.getUserById(userId);
         Map<String, Object> preferences = new HashMap<>();
-        preferences.put("emailNotifications", true);
-        preferences.put("browserNotifications", true);
-        preferences.put("reminderDays", 2);
+        if (user != null) {
+            preferences.put("emailNotifications", user.isEmailNotifications());
+            preferences.put("browserNotifications", user.isBrowserNotifications());
+            preferences.put("renewalReminders", user.isRenewalReminders());
+            preferences.put("weeklySummary", user.isWeeklySummary());
+            preferences.put("reminderDays", 2);
+        } else {
+            preferences.put("emailNotifications", true);
+            preferences.put("browserNotifications", true);
+            preferences.put("renewalReminders", true);
+            preferences.put("weeklySummary", false);
+            preferences.put("reminderDays", 2);
+        }
         return preferences;
     }
-    
-    public void testNotification(String type) {
-        System.out.println("Testing notification of type: " + type);
+
+    public void testNotification(String userId, String type) {
+        Notification notification = new Notification();
+        notification.setUserId(userId);
+        notification.setType(type != null ? type : "info");
+        notification.setTitle("Test Notification");
+        notification.setMessage("Notifications are configured correctly.");
+        notification.setRead(false);
+        notificationDAO.save(notification);
+    }
+
+    private boolean getBoolean(Object value, boolean defaultValue) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String stringValue) {
+            return Boolean.parseBoolean(stringValue);
+        }
+        return defaultValue;
     }
 }

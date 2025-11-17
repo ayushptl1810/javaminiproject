@@ -1,15 +1,8 @@
 com/subsentry/model/User.class
-com/subsentry/controller/ReportController.class
-com/subsentry/model/Subscription.class
 com/subsentry/controller/NotificationController.class
 com/subsentry/controller/AuthController.class
-com/subsentry/service/ReportService.class
 com/subsentry/util/JwtUtil.class
 com/subsentry/service/NotificationService.class
-com/subsentry/SubSentryApplication.class
-com/subsentry/controller/TestController.class
-com/subsentry/security/JwtAuthenticationFilter.class
 com/subsentry/controller/AuthController$SignupRequest.class
-com/subsentry/config/SecurityConfig.class
 com/subsentry/service/AuthService.class
 com/subsentry/controller/AuthController$LoginRequest.class

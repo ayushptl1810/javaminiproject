@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { notificationAPI } from "../services/api";
 
@@ -8,7 +8,8 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const userId = user?.id;
 
   // Request notification permission on mount
   useEffect(() => {
@@ -17,19 +18,10 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  // Fetch notifications when user is authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchNotifications();
-      // Set up real-time notifications (WebSocket or polling)
-      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
-      const response = await notificationAPI.getNotifications();
+      if (!userId) return;
+      const response = await notificationAPI.getNotifications({ userId });
       // Handle backend response format: { data: { data: [...] } }
       let notificationsArray = [];
       if (response?.data?.data) {
@@ -42,11 +34,21 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     }
-  };
+  }, [userId]);
+
+  // Fetch notifications when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && userId) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, userId, fetchNotifications]);
 
   const markAsRead = async (notificationId) => {
     try {
-      await notificationAPI.markAsRead(notificationId);
+      if (!userId) return;
+      await notificationAPI.markAsRead(notificationId, { userId });
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
@@ -63,7 +65,8 @@ export const NotificationProvider = ({ children }) => {
 
   const markAllAsRead = async () => {
     try {
-      await notificationAPI.markAllAsRead();
+      if (!userId) return;
+      await notificationAPI.markAllAsRead({ userId });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       
@@ -78,7 +81,8 @@ export const NotificationProvider = ({ children }) => {
 
   const deleteNotification = async (notificationId) => {
     try {
-      await notificationAPI.deleteNotification(notificationId);
+      if (!userId) return;
+      await notificationAPI.deleteNotification(notificationId, { userId });
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       const deletedNotification = notifications.find(n => n.id === notificationId);
       if (deletedNotification && !deletedNotification.read) {

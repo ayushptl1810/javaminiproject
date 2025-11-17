@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "react-query";
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
+import {
+  BarChart3,
+  TrendingUp,
+  PieChart,
   DollarSign,
   Calendar,
-  Filter,
-  Download
 } from "lucide-react";
 import { analyticsAPI } from "../services/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -15,21 +13,24 @@ import SpendingTrendChart from "../components/analysis/SpendingTrendChart";
 import CategoryBreakdownChart from "../components/analysis/CategoryBreakdownChart";
 import TopSubscriptionsChart from "../components/analysis/TopSubscriptionsChart";
 import BillingCycleChart from "../components/analysis/BillingCycleChart";
-import InsightsPanel from "../components/analysis/InsightsPanel";
-import ComparisonTool from "../components/analysis/ComparisonTool";
+import { useAuth } from "../contexts/AuthContext";
 
 const Analysis = () => {
   const [dateRange, setDateRange] = useState("6months");
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [showComparison, setShowComparison] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
 
   // Fetch analytics data
-  const { data: analytics, isLoading: analyticsLoading } = useQuery(
-    ["analytics", dateRange],
-    () => analyticsAPI.getOverview({ dateRange }),
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    refetch: refetchOverview,
+  } = useQuery(
+    ["analytics", dateRange, userId],
+    () => analyticsAPI.getOverview({ dateRange, userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -37,12 +38,16 @@ const Analysis = () => {
     }
   );
 
-  const { data: spendingTrend, isLoading: trendLoading } = useQuery(
-    ["spending-trend", dateRange],
-    () => analyticsAPI.getSpendingTrend({ dateRange }),
+  const {
+    data: spendingTrend,
+    isLoading: trendLoading,
+    refetch: refetchTrend,
+  } = useQuery(
+    ["spending-trend", dateRange, userId],
+    () => analyticsAPI.getSpendingTrend({ dateRange, userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -50,12 +55,16 @@ const Analysis = () => {
     }
   );
 
-  const { data: categoryBreakdown, isLoading: categoryLoading } = useQuery(
-    ["category-breakdown", dateRange],
-    () => analyticsAPI.getCategoryBreakdown({ dateRange }),
+  const {
+    data: categoryBreakdown,
+    isLoading: categoryLoading,
+    refetch: refetchCategory,
+  } = useQuery(
+    ["category-breakdown", dateRange, userId],
+    () => analyticsAPI.getCategoryBreakdown({ dateRange, userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -63,12 +72,16 @@ const Analysis = () => {
     }
   );
 
-  const { data: topSubscriptions, isLoading: topLoading } = useQuery(
-    ["top-subscriptions", dateRange],
-    () => analyticsAPI.getTopSubscriptions({ dateRange }),
+  const {
+    data: topSubscriptions,
+    isLoading: topLoading,
+    refetch: refetchTop,
+  } = useQuery(
+    ["top-subscriptions", dateRange, userId],
+    () => analyticsAPI.getTopSubscriptions({ dateRange, userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -76,12 +89,16 @@ const Analysis = () => {
     }
   );
 
-  const { data: billingCycleAnalysis, isLoading: billingLoading } = useQuery(
-    ["billing-cycle", dateRange],
-    () => analyticsAPI.getBillingCycleAnalysis({ dateRange }),
+  const {
+    data: billingCycleAnalysis,
+    isLoading: billingLoading,
+    refetch: refetchBilling,
+  } = useQuery(
+    ["billing-cycle", dateRange, userId],
+    () => analyticsAPI.getBillingCycleAnalysis({ dateRange, userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -89,20 +106,34 @@ const Analysis = () => {
     }
   );
 
-  const { data: insights, isLoading: insightsLoading } = useQuery(
-    ["insights", dateRange],
-    () => analyticsAPI.getInsights({ dateRange }),
-    {
-      select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
-        if (data?.data?.data) return data.data.data;
-        if (data?.data) return data.data;
-        return {};
-      },
-    }
-  );
+  useEffect(() => {
+    if (!userId) return;
+    const handler = () => {
+      refetchOverview();
+      refetchTrend();
+      refetchCategory();
+      refetchTop();
+      refetchBilling();
+    };
+    window.addEventListener("subscriptions:changed", handler);
+    return () => window.removeEventListener("subscriptions:changed", handler);
+  }, [
+    userId,
+    refetchOverview,
+    refetchTrend,
+    refetchCategory,
+    refetchTop,
+    refetchBilling,
+  ]);
 
-  const isLoading = analyticsLoading || trendLoading || categoryLoading || topLoading || billingLoading || insightsLoading;
+  const isLoading =
+    authLoading ||
+    !userId ||
+    analyticsLoading ||
+    trendLoading ||
+    categoryLoading ||
+    topLoading ||
+    billingLoading;
 
   const dateRangeOptions = [
     { value: "1month", label: "Last Month" },
@@ -111,15 +142,6 @@ const Analysis = () => {
     { value: "1year", label: "Last Year" },
     { value: "all", label: "All Time" },
   ];
-
-  const handleExportData = async () => {
-    try {
-      // In a real app, this would call the export API
-      console.log("Exporting analysis data...");
-    } catch (error) {
-      console.error("Failed to export data:", error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -140,22 +162,6 @@ const Analysis = () => {
           <p className="text-gray-600 dark:text-gray-400">
             Insights and trends for your subscription spending
           </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowComparison(true)}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Compare
-          </button>
-          <button
-            onClick={handleExportData}
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </button>
         </div>
       </div>
 
@@ -294,22 +300,6 @@ const Analysis = () => {
           <BillingCycleChart data={billingCycleAnalysis} />
         </div>
       </div>
-
-      {/* Insights Panel */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          AI Insights & Recommendations
-        </h3>
-        <InsightsPanel insights={insights} />
-      </div>
-
-      {/* Comparison Tool Modal */}
-      {showComparison && (
-        <ComparisonTool
-          isOpen={showComparison}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
     </div>
   );
 };

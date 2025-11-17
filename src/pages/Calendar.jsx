@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "react-query";
 import {
   format,
@@ -12,6 +12,7 @@ import { subscriptionAPI } from "../services/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import SubscriptionModal from "../components/subscription/SubscriptionModal";
 import CustomCalendar from "../components/calendar/CustomCalendar";
+import { useAuth } from "../contexts/AuthContext";
 
 const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -19,20 +20,33 @@ const CalendarPage = () => {
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
 
   // Fetch subscriptions
   const {
     data: subscriptions,
     isLoading,
     refetch,
-  } = useQuery("subscriptions", () => subscriptionAPI.getAll(), {
-    select: (data) => {
-      // Handle backend response format: { data: { data: [...] } }
-      if (data?.data?.data) return data.data.data;
-      if (data?.data && Array.isArray(data.data)) return data.data;
-      return [];
-    },
-  });
+  } = useQuery(
+    ["subscriptions-calendar", userId],
+    () => subscriptionAPI.getAll({ userId }),
+    {
+      enabled: !!userId,
+      select: (data) => {
+        if (data?.data?.data) return data.data.data;
+        if (data?.data && Array.isArray(data.data)) return data.data;
+        return [];
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+    const handler = () => refetch();
+    window.addEventListener("subscriptions:changed", handler);
+    return () => window.removeEventListener("subscriptions:changed", handler);
+  }, [userId, refetch]);
 
   // Filter subscriptions based on search and category
   const filteredSubscriptions =
@@ -80,7 +94,7 @@ const CalendarPage = () => {
     setIsSubscriptionModalOpen(true);
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading || !userId) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />

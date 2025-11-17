@@ -16,19 +16,18 @@ public class NotificationController {
     private NotificationService notificationService;
     
     @GetMapping
-    public ResponseEntity<?> getNotifications() {
+    public ResponseEntity<?> getNotifications(@RequestParam String userId) {
         try {
-            Map<String, Object> notifications = notificationService.getNotifications();
-            return ResponseEntity.ok(Map.of("data", notifications.get("notifications")));
+            return ResponseEntity.ok(Map.of("data", notificationService.getNotifications(userId)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch notifications"));
         }
     }
     
     @PutMapping("/{id}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable String id) {
+    public ResponseEntity<?> markAsRead(@PathVariable String id, @RequestParam String userId) {
         try {
-            notificationService.markAsRead(id);
+            notificationService.markAsRead(userId, id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to mark notification as read"));
@@ -36,9 +35,9 @@ public class NotificationController {
     }
     
     @PutMapping("/read-all")
-    public ResponseEntity<?> markAllAsRead() {
+    public ResponseEntity<?> markAllAsRead(@RequestParam String userId) {
         try {
-            notificationService.markAllAsRead();
+            notificationService.markAllAsRead(userId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to mark all notifications as read"));
@@ -46,9 +45,9 @@ public class NotificationController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteNotification(@PathVariable String id) {
+    public ResponseEntity<?> deleteNotification(@PathVariable String id, @RequestParam String userId) {
         try {
-            notificationService.deleteNotification(id);
+            notificationService.deleteNotification(userId, id);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to delete notification"));
@@ -56,9 +55,9 @@ public class NotificationController {
     }
     
     @PutMapping("/preferences")
-    public ResponseEntity<?> updatePreferences(@RequestBody Map<String, Object> preferences) {
+    public ResponseEntity<?> updatePreferences(@RequestParam String userId, @RequestBody Map<String, Object> preferences) {
         try {
-            notificationService.updatePreferences(preferences);
+            notificationService.updatePreferences(userId, preferences);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to update preferences"));
@@ -66,20 +65,19 @@ public class NotificationController {
     }
     
     @GetMapping("/preferences")
-    public ResponseEntity<?> getPreferences() {
+    public ResponseEntity<?> getPreferences(@RequestParam String userId) {
         try {
-            Map<String, Object> preferences = notificationService.getPreferences();
-            return ResponseEntity.ok(Map.of("data", preferences));
+            return ResponseEntity.ok(Map.of("data", notificationService.getPreferences(userId)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch preferences"));
         }
     }
     
     @PostMapping("/test")
-    public ResponseEntity<?> testNotification(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> testNotification(@RequestParam String userId, @RequestBody Map<String, Object> request) {
         try {
             String type = (String) request.get("type");
-            notificationService.testNotification(type);
+            notificationService.testNotification(userId, type);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to test notification"));

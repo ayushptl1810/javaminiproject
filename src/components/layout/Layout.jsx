@@ -5,24 +5,18 @@ import NotificationPanel from "../notification/NotificationPanel";
 
 const Layout = () => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex">
-        {/* Sidebar */}
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="flex h-full">
         <Sidebar />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen">
-          {/* Header */}
+        <div className="flex flex-1 flex-col h-full">
           <Header />
-
-          {/* Page Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 overflow-y-auto p-6">
             <Outlet />
           </main>
         </div>
       </div>
 
-      {/* Notification Panel */}
       <NotificationPanel />
     </div>
   );

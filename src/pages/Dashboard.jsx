@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "react-query";
-import { 
-  Plus, 
-  Calendar, 
-  TrendingUp, 
-  DollarSign, 
+import {
+  Plus,
+  Calendar,
+  TrendingUp,
+  DollarSign,
   AlertTriangle,
   CheckCircle,
   Clock,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
 } from "lucide-react";
 import { subscriptionAPI, analyticsAPI } from "../services/api";
 import { useNotification } from "../contexts/NotificationContext";
+import { useAuth } from "../contexts/AuthContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import SubscriptionModal from "../components/subscription/SubscriptionModal";
 import QuickStats from "../components/dashboard/QuickStats";
@@ -23,12 +24,19 @@ import SpendingChart from "../components/dashboard/SpendingChart";
 const Dashboard = () => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const { addNotification } = useNotification();
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
 
   // Fetch subscriptions
-  const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery(
-    "subscriptions",
-    () => subscriptionAPI.getAll(),
+  const {
+    data: subscriptions,
+    isLoading: subscriptionsLoading,
+    refetch: refetchSubscriptions,
+  } = useQuery(
+    ["subscriptions", userId],
+    () => subscriptionAPI.getAll({ userId }),
     {
+      enabled: !!userId,
       select: (data) => {
         // Handle backend response format: { data: { data: [...] } }
         if (data?.data?.data) return data.data.data;
@@ -39,12 +47,33 @@ const Dashboard = () => {
   );
 
   // Fetch analytics overview
-  const { data: analytics, isLoading: analyticsLoading } = useQuery(
-    "analytics-overview",
-    () => analyticsAPI.getOverview(),
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    refetch: refetchAnalytics,
+  } = useQuery(
+    ["analytics-overview", userId],
+    () => analyticsAPI.getOverview({ userId }),
     {
+      enabled: !!userId,
       select: (data) => {
-        // Handle backend response format: { data: { data: {...} } }
+        if (data?.data?.data) return data.data.data;
+        if (data?.data) return data.data;
+        return {};
+      },
+    }
+  );
+
+  const {
+    data: spendingTrendData,
+    isLoading: trendLoading,
+    refetch: refetchTrend,
+  } = useQuery(
+    ["dashboard-spending-trend", userId],
+    () => analyticsAPI.getSpendingTrend({ userId }),
+    {
+      enabled: !!userId,
+      select: (data) => {
         if (data?.data?.data) return data.data.data;
         if (data?.data) return data.data;
         return {};
@@ -53,10 +82,15 @@ const Dashboard = () => {
   );
 
   // Fetch upcoming subscriptions
-  const { data: upcomingSubscriptions, isLoading: upcomingLoading } = useQuery(
-    "upcoming-subscriptions",
-    () => subscriptionAPI.getUpcoming(7),
+  const {
+    data: upcomingSubscriptions,
+    isLoading: upcomingLoading,
+    refetch: refetchUpcoming,
+  } = useQuery(
+    ["upcoming-subscriptions", userId],
+    () => subscriptionAPI.getUpcoming(7, { userId }),
     {
+      enabled: !!userId,
       select: (data) => {
         // Handle backend response format: { data: { data: [...] } }
         if (data?.data?.data) return data.data.data;
@@ -67,16 +101,28 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
+    if (!userId) return;
+    const handler = () => {
+      refetchSubscriptions();
+      refetchUpcoming();
+      refetchAnalytics();
+      refetchTrend();
+    };
+    window.addEventListener("subscriptions:changed", handler);
+    return () => window.removeEventListener("subscriptions:changed", handler);
+  }, [userId, refetchSubscriptions, refetchUpcoming, refetchAnalytics, refetchTrend]);
+
+  useEffect(() => {
     // Check for urgent notifications
-    if (subscriptions && subscriptions.length > 0) {
-      const urgentSubscriptions = subscriptions.filter(sub => {
+    if (userId && subscriptions && subscriptions.length > 0) {
+      const urgentSubscriptions = subscriptions.filter((sub) => {
         const daysUntilRenewal = Math.ceil(
           (new Date(sub.nextRenewalDate) - new Date()) / (1000 * 60 * 60 * 24)
         );
         return daysUntilRenewal <= 2 && daysUntilRenewal >= 0;
       });
 
-      urgentSubscriptions.forEach(sub => {
+      urgentSubscriptions.forEach((sub) => {
         // Check if notification already exists to avoid duplicates
         const notificationId = `urgent-${sub.id}`;
         // Only add if not already present
@@ -84,15 +130,23 @@ const Dashboard = () => {
           id: notificationId,
           type: "urgent",
           title: "Subscription Renewal Due Soon",
-          message: `${sub.name} renews in ${Math.ceil((new Date(sub.nextRenewalDate) - new Date()) / (1000 * 60 * 60 * 24))} days`,
+          message: `${sub.name} renews in ${Math.ceil(
+            (new Date(sub.nextRenewalDate) - new Date()) / (1000 * 60 * 60 * 24)
+          )} days`,
           read: false,
           createdAt: new Date().toISOString(),
         });
       });
     }
-  }, [subscriptions]); // Removed addNotification from dependencies to prevent infinite loop
+  }, [subscriptions, userId]);
 
-  const isLoading = subscriptionsLoading || analyticsLoading || upcomingLoading;
+  const isLoading =
+    authLoading ||
+    subscriptionsLoading ||
+    analyticsLoading ||
+    upcomingLoading ||
+    trendLoading ||
+    !userId;
 
   if (isLoading) {
     return (
@@ -141,7 +195,7 @@ const Dashboard = () => {
                 Last 6 months
               </div>
             </div>
-            <SpendingChart />
+            <SpendingChart data={spendingTrendData} />
           </div>
 
           {/* Recent Activity */}
@@ -177,15 +231,21 @@ const Dashboard = () => {
                 className="w-full flex items-center p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Plus className="h-5 w-5 text-blue-600 mr-3" />
-                <span className="text-gray-700 dark:text-gray-300">Add New Subscription</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  Add New Subscription
+                </span>
               </button>
               <button className="w-full flex items-center p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <TrendingUp className="h-5 w-5 text-green-600 mr-3" />
-                <span className="text-gray-700 dark:text-gray-300">View Analysis</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  View Analysis
+                </span>
               </button>
               <button className="w-full flex items-center p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <Calendar className="h-5 w-5 text-purple-600 mr-3" />
-                <span className="text-gray-700 dark:text-gray-300">Open Calendar</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  Open Calendar
+                </span>
               </button>
             </div>
           </div>
