@@ -1,29 +1,21 @@
 
 
-import java.sql.Connection;
-import java.sql.SQLException;
+package com.subsentry;
 
 import com.subsentry.util.DatabaseConnection;
+import org.junit.jupiter.api.Test;
 
-public class DatabaseConnectionTest {
-    public static void main(String[] args) {
-        try {
-            Connection conn = DatabaseConnection.getConnection();
-            if (conn != null && !conn.isClosed()) {
-                System.out.println(" Database connection successful!");
-                
-                // Test simple query
-                var stmt = conn.createStatement();
-                var rs = stmt.executeQuery("SELECT 1");
-                if (rs.next()) {
-                    System.out.println(" Database query successful!");
-                }
-                
-                DatabaseConnection.closeConnection();
-            }
-        } catch (SQLException e) {
-            System.out.println(" Database connection failed!");
-            e.printStackTrace();
-        }
+import java.sql.Connection;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class DatabaseConnectionTest {
+
+    @Test
+    void connectionShouldOpenAndClose() throws Exception {
+        Connection conn = DatabaseConnection.getConnection();
+        assertNotNull(conn);
+        assertFalse(conn.isClosed());
     }
 }

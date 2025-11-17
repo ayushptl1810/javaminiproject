@@ -44,15 +44,21 @@ public class ReportService {
     private final AnalyticsService analyticsService;
     private final ReportDAO reportDAO;
     private final ScheduledReportDAO scheduledReportDAO;
+    private final GeminiService geminiService;
+    private final PythonReportService pythonReportService;
 
     public ReportService(SubscriptionService subscriptionService,
                          AnalyticsService analyticsService,
                          ReportDAO reportDAO,
-                         ScheduledReportDAO scheduledReportDAO) {
+                         ScheduledReportDAO scheduledReportDAO,
+                         GeminiService geminiService,
+                         PythonReportService pythonReportService) {
         this.subscriptionService = subscriptionService;
         this.analyticsService = analyticsService;
         this.reportDAO = reportDAO;
         this.scheduledReportDAO = scheduledReportDAO;
+        this.geminiService = geminiService;
+        this.pythonReportService = pythonReportService;
     }
 
     public List<GeneratedReport> getReports(String userId) {
@@ -60,10 +66,29 @@ public class ReportService {
     }
 
     public GeneratedReport generateReport(String userId, Map<String, Object> reportData) {
+        String type = String.valueOf(reportData.getOrDefault("type", "summary"));
+        if (pythonReportService.isEnabled() && pythonReportService.supports(type)) {
+            String reportId = java.util.UUID.randomUUID().toString();
+            PythonReportService.PythonReportResult pythonResult = pythonReportService.generateReport(
+                    reportId,
+                    userId,
+                    type
+            );
+            GeneratedReport report = new GeneratedReport();
+            report.setId(reportId);
+            report.setUserId(userId);
+            report.setName((String) reportData.getOrDefault("name", type + " report"));
+            report.setType(type);
+            report.setFormat("pdf");
+            report.setStatus("completed");
+            report.setFilters(reportData);
+            report.setContent(pythonResult.toContentMap());
+            return reportDAO.save(report);
+        }
+
         Map<String, Object> filters = extractFilters(reportData);
         List<Subscription> subscriptions = applyFilters(userId, filters);
 
-        String type = String.valueOf(reportData.getOrDefault("type", "summary"));
         Map<String, Object> content = switch (type) {
             case "category" -> buildCategoryBreakdownReport(subscriptions);
             case "annual" -> buildAnnualProjectionReport(subscriptions);
@@ -121,6 +146,16 @@ public class ReportService {
         if (!Objects.equals(report.getId(), id) || report.getContent() == null) {
             return "{\"error\":\"Report not found\"}".getBytes(StandardCharsets.UTF_8);
         }
+
+        Object filePath = report.getContent().get("filePath");
+        if (filePath != null) {
+            try {
+                return java.nio.file.Files.readAllBytes(java.nio.file.Path.of(String.valueOf(filePath)));
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to read generated report file", e);
+            }
+        }
+
         if ("pdf".equalsIgnoreCase(format)) {
             try {
                 return buildPdfDocument(report);
@@ -199,6 +234,107 @@ public class ReportService {
 
     public void deleteSchedule(String userId, String id) {
         scheduledReportDAO.delete(userId, id);
+    }
+
+    public GeneratedReport generateAiReport(String userId, Map<String, Object> payload) {
+        System.out.println("Generating AI report for user " + userId);
+        System.out.println("Payload: " + payload);
+        validateAiPayload(payload);
+
+        Map<String, Object> analyticsContext = buildAnalyticsContext(userId, payload);
+        Map<String, Object> enrichedPayload = new HashMap<>(payload);
+        enrichedPayload.put("analyticsContext", analyticsContext);
+
+        String narrative = geminiService.generateReportSummary(enrichedPayload);
+
+        GeneratedReport report = new GeneratedReport();
+        report.setUserId(userId);
+        report.setName(String.valueOf(payload.getOrDefault("name", "AI Report")));
+        report.setType(String.valueOf(payload.getOrDefault("type", "ai_summary")));
+        report.setFormat("markdown");
+        report.setStatus("completed");
+        report.setFilters(payload);
+
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("narrative", narrative);
+        content.put("analyticsContext", analyticsContext);
+        content.put("generatedAt", LocalDateTime.now().toString());
+        report.setContent(content);
+
+        System.out.println("AI report generated successfully");
+        return reportDAO.save(report);
+    }
+
+    private void validateAiPayload(Map<String, Object> payload) {
+        if (payload == null) {
+            throw new IllegalArgumentException("Report payload is required");
+        }
+        if (payload.get("name") == null || String.valueOf(payload.get("name")).isBlank()) {
+            throw new IllegalArgumentException("Report name is required");
+        }
+        if (payload.get("type") == null || String.valueOf(payload.get("type")).isBlank()) {
+            throw new IllegalArgumentException("Report type is required");
+        }
+        if (payload.get("startDate") == null || payload.get("endDate") == null) {
+            throw new IllegalArgumentException("Start and end dates are required");
+        }
+    }
+
+    private Map<String, Object> buildAnalyticsContext(String userId, Map<String, Object> payload) {
+        Map<String, Object> context = new LinkedHashMap<>();
+
+        context.put("reportMeta", Map.of(
+                "name", payload.get("name"),
+                "type", payload.get("type"),
+                "dateRange", Map.of(
+                        "start", payload.get("startDate"),
+                        "end", payload.get("endDate")
+                ),
+                "categories", payload.getOrDefault("categories", List.of("All")),
+                "format", payload.getOrDefault("format", "pdf"),
+                "includeCharts", payload.getOrDefault("includeCharts", true),
+                "includeInsights", payload.getOrDefault("includeInsights", true)
+        ));
+
+        Map<String, Object> overview = analyticsService.getOverview(userId);
+        context.put("overview", overview);
+        context.put("spendingTrend", analyticsService.getSpendingTrend(userId).get("monthlyData"));
+        context.put("categoryBreakdown", analyticsService.getCategoryBreakdown(userId).get("categories"));
+        context.put("billingCycleMix", analyticsService.getBillingCycleAnalysis(userId).get("cycles"));
+        context.put("topSubscriptions", analyticsService.getTopSubscriptions(userId).get("subscriptions"));
+        context.put("projections", analyticsService.getProjections(userId));
+        context.put("insights", analyticsService.getInsights(userId).get("insights"));
+
+        List<Map<String, Object>> notableSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null)
+                .stream()
+                .sorted(Comparator.comparingDouble(Subscription::getAmount).reversed())
+                .limit(15)
+                .map(this::mapSubscription)
+                .collect(Collectors.toList());
+        context.put("notableSubscriptions", notableSubscriptions);
+
+        List<Map<String, Object>> renewals = subscriptionService.getUpcomingSubscriptions(userId, 30)
+                .stream()
+                .map(this::mapSubscription)
+                .collect(Collectors.toList());
+        context.put("upcomingRenewals30d", renewals);
+
+        context.put("generatedAt", LocalDateTime.now().toString());
+        return context;
+    }
+
+    private Map<String, Object> mapSubscription(Subscription sub) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", sub.getId());
+        map.put("name", sub.getName());
+        map.put("category", sub.getCategory());
+        map.put("amount", round(sub.getAmount()));
+        map.put("currency", sub.getCurrency());
+        map.put("billingCycle", sub.getBillingCycle());
+        map.put("status", sub.getStatus());
+        map.put("nextRenewalDate", sub.getNextRenewalDate());
+        map.put("startDate", sub.getStartDate());
+        return map;
     }
 
     private Map<String, Object> extractFilters(Map<String, Object> reportData) {
@@ -455,7 +591,7 @@ public class ReportService {
         return template;
     }
 
-    private LocalDateTime calculateNextRun(String frequency, int dayOfPeriod) {
+    public LocalDateTime calculateNextRun(String frequency, int dayOfPeriod) {
         LocalDateTime now = LocalDateTime.now();
         LocalDate targetDate = now.toLocalDate();
 

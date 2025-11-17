@@ -4,6 +4,7 @@
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/controller/AnalyticsController.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/dao/ReportDAO.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/model/GeneratedReport.java
+/Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/ScheduledTaskService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/controller/ReportController.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/controller/FileController.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/dao/UserCategoryDAO.java
@@ -20,14 +21,17 @@
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/dao/NotificationDAO.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/util/DatabaseConnection.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/dao/ScheduledReportDAO.java
+/Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/PythonReportService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/repository/JdbcUserRepository.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/SettingsService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/dao/SubscriptionDAO.java
+/Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/EmailService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/ReportService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/NotificationService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/AnalyticsService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/AuthService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/model/Subscription.java
+/Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/GeminiService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/security/JwtAuthenticationFilter.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/service/SubscriptionService.java
 /Users/ayushpatel/Documents/GitHub/JavaMiniProject/backend/src/main/java/com/subsentry/controller/SubscriptionController.java

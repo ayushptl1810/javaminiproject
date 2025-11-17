@@ -125,6 +125,26 @@ public class ScheduledReportDAO {
         }
     }
 
+    public List<ScheduledReport> findDueReports() {
+        String sql = """
+                SELECT * FROM scheduled_reports
+                WHERE next_run IS NOT NULL AND next_run <= NOW()
+                ORDER BY next_run ASC
+                """;
+        List<ScheduledReport> schedules = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    schedules.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load due scheduled reports", e);
+        }
+        return schedules;
+    }
+
     private void bind(PreparedStatement ps, ScheduledReport schedule) throws SQLException {
         int i = 1;
         ps.setString(i++, schedule.getId());

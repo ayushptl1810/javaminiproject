@@ -3,8 +3,6 @@ package com.subsentry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import com.subsentry.util.DatabaseConnection;
 
 /**
  * Main application class for SubSentry Backend API
@@ -18,7 +16,6 @@ import com.subsentry.util.DatabaseConnection;
  */
 @SpringBootApplication
 @EnableScheduling
-@EnableMongoAuditing
 public class SubSentryApplication {
 
     public static void main(String[] args) {

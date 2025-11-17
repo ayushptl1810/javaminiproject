@@ -39,9 +39,15 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
 
   const reportType = watch("type");
   const dateRange = watch("dateRange");
-  const scheduleFrequency = watch("scheduleFrequency");
   const startDateValue = watch("startDate");
   const endDateValue = watch("endDate");
+
+  // Reset to step 1 whenever modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (template?.title) {
@@ -53,32 +59,17 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
     {
       value: "summary",
       label: "Summary Report",
-      description: "Overview of all subscriptions",
-    },
-    {
-      value: "detailed",
-      label: "Detailed Report",
-      description: "Comprehensive subscription analysis",
+      description: "High-level overview with key highlights",
     },
     {
       value: "category",
       label: "Category Report",
-      description: "Breakdown by subscription category",
+      description: "Compare spend across subscription categories",
     },
     {
       value: "trend",
       label: "Trend Report",
-      description: "Spending trends over time",
-    },
-    {
-      value: "tax",
-      label: "Tax Report",
-      description: "Subscription expenses for tax purposes",
-    },
-    {
-      value: "custom",
-      label: "Custom Report",
-      description: "Build your own report",
+      description: "Explain spending patterns over time",
     },
   ];
 
@@ -89,13 +80,6 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
     { value: "last6Months", label: "Last 6 Months" },
     { value: "lastYear", label: "Last Year" },
     { value: "allTime", label: "All Time" },
-  ];
-
-  const scheduleOptions = [
-    { value: "none", label: "No Schedule" },
-    { value: "weekly", label: "Weekly" },
-    { value: "monthly", label: "Monthly" },
-    { value: "quarterly", label: "Quarterly" },
   ];
 
   const formatOptions = [
@@ -115,7 +99,6 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
           Array.isArray(payload) && payload.length > 0 ? payload : []
         );
       } catch (error) {
-        console.error("Failed to load categories", error);
         setAvailableCategories([]);
       }
     };
@@ -137,46 +120,55 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
   const categories =
     availableCategories.length > 0 ? availableCategories : fallbackCategories;
 
+  const toIsoString = (value) => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  };
+
   const onSubmit = async (data) => {
+    // Only allow submission on step 2
+    console.log("onSubmit called, currentStep:", currentStep);
+    if (currentStep !== 2) {
+      console.log("Preventing submission - not on step 2");
+      return;
+    }
+
+    console.log("Proceeding with report generation on step 2");
     setIsGenerating(true);
     try {
       const reportPayload = {
         ...data,
-        startDate: data.startDate?.toISOString(),
-        endDate: data.endDate?.toISOString(),
-        categories: data.categories || [],
+        startDate: toIsoString(data.startDate),
+        endDate: toIsoString(data.endDate),
+        categories:
+          data.categories && data.categories.length > 0
+            ? data.categories
+            : categories,
       };
 
+      if (!reportPayload.name || !reportPayload.name.trim()) {
+        throw new Error("Please provide a report name.");
+      }
+      if (!reportPayload.startDate || !reportPayload.endDate) {
+        throw new Error("Please select a valid date range.");
+      }
+
+      console.log("Generating report with payload:", reportPayload);
       const response = await reportAPI.generate(reportPayload, { userId });
+      console.log("Report response:", response);
       const generatedReport = response?.data?.data ?? response?.data;
 
       if (!generatedReport?.id) {
         throw new Error("Report generation did not return an identifier");
       }
 
-      if (data.scheduleFrequency && data.scheduleFrequency !== "none") {
-        await reportAPI.scheduleReport(
-          {
-            name: data.name,
-            frequency: data.scheduleFrequency,
-            dayOfPeriod: data.scheduleDay,
-            emailDelivery: data.emailDelivery,
-            reportId: generatedReport.id,
-            type: data.type,
-            filters: {
-              startDate: reportPayload.startDate,
-              endDate: reportPayload.endDate,
-              categories: reportPayload.categories,
-            },
-          },
-          { userId }
-        );
-      }
-
       toast.success("Report generated successfully!");
       onSuccess();
     } catch (error) {
+      console.error("Report generation error:", error);
       const message =
+        error.response?.data?.error ||
         error.response?.data?.message ||
         error.message ||
         "Failed to generate report";
@@ -201,7 +193,28 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
         />
 
         <div className="relative z-10 inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("Form onSubmit triggered, currentStep:", currentStep);
+              if (currentStep !== 2) {
+                console.log("Form submission blocked - not on step 2");
+                return false;
+              }
+              console.log("Form submission allowed - on step 2");
+              handleSubmit(onSubmit)(e);
+            }}
+            onKeyDown={(e) => {
+              // Prevent Enter key from submitting form on step 1
+              if (e.key === "Enter" && currentStep !== 2) {
+                console.log("Enter key blocked on step", currentStep);
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+              }
+            }}
+          >
             <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
@@ -221,52 +234,50 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
 
               {/* Progress Steps */}
               <div className="mb-6 space-y-3">
-                <div className="grid grid-cols-3 items-center text-center">
-                  {["Report Type", "Options", "Schedule"].map(
-                    (label, index) => (
-                      <div
-                        key={label}
-                        className="flex flex-col items-center w-full"
-                      >
-                        <div className="flex items-center w-full">
-                          {index === 0 ? (
-                            <div className="flex-1" />
-                          ) : (
-                            <div
-                              className={`flex-1 h-0.5 ${
-                                index <= currentStep - 1
-                                  ? "bg-blue-600"
-                                  : "bg-gray-200 dark:bg-gray-700"
-                              }`}
-                            />
-                          )}
+                <div className="grid grid-cols-2 items-center text-center">
+                  {["Report Type", "Options"].map((label, index) => (
+                    <div
+                      key={label}
+                      className="flex flex-col items-center w-full"
+                    >
+                      <div className="flex items-center w-full">
+                        {index === 0 ? (
+                          <div className="flex-1" />
+                        ) : (
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mx-3 ${
-                              index + 1 <= currentStep
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                            className={`flex-1 h-0.5 ${
+                              index <= currentStep - 1
+                                ? "bg-blue-600"
+                                : "bg-gray-200 dark:bg-gray-700"
                             }`}
-                          >
-                            {index + 1}
-                          </div>
-                          {index === 2 ? (
-                            <div className="flex-1" />
-                          ) : (
-                            <div
-                              className={`flex-1 h-0.5 ${
-                                index + 1 < currentStep
-                                  ? "bg-blue-600"
-                                  : "bg-gray-200 dark:bg-gray-700"
-                              }`}
-                            />
-                          )}
+                          />
+                        )}
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mx-3 ${
+                            index + 1 <= currentStep
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                          }`}
+                        >
+                          {index + 1}
                         </div>
-                        <span className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                          {label}
-                        </span>
+                        {index === 1 ? (
+                          <div className="flex-1" />
+                        ) : (
+                          <div
+                            className={`flex-1 h-0.5 ${
+                              index + 1 < currentStep
+                                ? "bg-blue-600"
+                                : "bg-gray-200 dark:bg-gray-700"
+                            }`}
+                          />
+                        )}
                       </div>
-                    )
-                  )}
+                      <span className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        {label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -282,6 +293,13 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
                         required: "Report name is required",
                       })}
                       type="text"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && currentStep !== 2) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       placeholder="Enter report name"
                     />
@@ -439,72 +457,44 @@ const ReportGenerator = ({ isOpen, onClose, template, onSuccess, userId }) => {
                   </div>
                 </div>
               )}
-
-              {/* Step 3: Schedule */}
-              {currentStep === 3 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Schedule Frequency
-                    </label>
-                    <select
-                      {...register("scheduleFrequency")}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    >
-                      {scheduleOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {scheduleFrequency !== "none" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Schedule Day
-                      </label>
-                      <select
-                        {...register("scheduleDay")}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                      >
-                        {Array.from({ length: 28 }, (_, i) => i + 1).map(
-                          (day) => (
-                            <option key={day} value={day}>
-                              {day}
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="flex items-center">
-                    <input
-                      {...register("emailDelivery")}
-                      type="checkbox"
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                      Email report when generated
-                    </label>
-                  </div>
-                </div>
-              )}
             </div>
 
+            {/* Hidden submit button - always present but disabled on step 1 to prevent auto-submit */}
+            <button
+              type="submit"
+              disabled={currentStep !== 2 || isGenerating}
+              style={{ display: "none" }}
+              aria-hidden="true"
+            />
+
             <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              {currentStep < 3 ? (
+              {currentStep < 2 ? (
                 <button
                   type="button"
-                  onClick={nextStep}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Next button clicked on step", currentStep);
+                    nextStep();
+                  }}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   Next
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log(
+                      "Generate Report button clicked on step",
+                      currentStep
+                    );
+                    if (currentStep === 2) {
+                      handleSubmit(onSubmit)(e);
+                    }
+                  }}
                   disabled={isGenerating}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
