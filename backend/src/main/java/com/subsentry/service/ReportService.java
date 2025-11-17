@@ -296,12 +296,17 @@ public class ReportService {
                 "includeInsights", payload.getOrDefault("includeInsights", true)
         ));
 
-        Map<String, Object> overview = analyticsService.getOverview(userId);
+        // Extract dateRange from payload or use "all" for all data
+        String dateRange = payload.containsKey("dateRange") && payload.get("dateRange") instanceof String 
+            ? (String) payload.get("dateRange") 
+            : "all";
+        
+        Map<String, Object> overview = analyticsService.getOverview(userId, dateRange);
         context.put("overview", overview);
-        context.put("spendingTrend", analyticsService.getSpendingTrend(userId).get("monthlyData"));
-        context.put("categoryBreakdown", analyticsService.getCategoryBreakdown(userId).get("categories"));
-        context.put("billingCycleMix", analyticsService.getBillingCycleAnalysis(userId).get("cycles"));
-        context.put("topSubscriptions", analyticsService.getTopSubscriptions(userId).get("subscriptions"));
+        context.put("spendingTrend", analyticsService.getSpendingTrend(userId, dateRange).get("monthlyData"));
+        context.put("categoryBreakdown", analyticsService.getCategoryBreakdown(userId, dateRange).get("categories"));
+        context.put("billingCycleMix", analyticsService.getBillingCycleAnalysis(userId, dateRange).get("cycles"));
+        context.put("topSubscriptions", analyticsService.getTopSubscriptions(userId, dateRange).get("subscriptions"));
         context.put("projections", analyticsService.getProjections(userId));
         context.put("insights", analyticsService.getInsights(userId).get("insights"));
 
@@ -394,7 +399,7 @@ public class ReportService {
 
     private Map<String, Object> buildMonthlySummaryReport(String userId, List<Subscription> subscriptions) {
         Map<String, Object> summary = buildSummaryMetrics(subscriptions);
-        Map<String, Object> overview = analyticsService.getOverview(userId);
+        Map<String, Object> overview = analyticsService.getOverview(userId, null);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("headlineMetrics", summary);

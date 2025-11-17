@@ -53,22 +53,22 @@ const RecentActivity = ({ subscriptions }) => {
   const typeConfig = {
     created: {
       icon: Plus,
-      color: "text-green-600 bg-green-100 dark:bg-green-900/20",
+      color: "text-emerald-400 bg-emerald-900/20",
       label: "Added subscription",
     },
     updated: {
       icon: Edit,
-      color: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
+      color: "text-blue-400 bg-blue-900/20",
       label: "Updated subscription",
     },
     renewed: {
       icon: DollarSign,
-      color: "text-purple-600 bg-purple-100 dark:bg-purple-900/20",
+      color: "text-violet-400 bg-violet-900/20",
       label: "Upcoming renewal",
     },
     cancelled: {
       icon: Trash2,
-      color: "text-red-600 bg-red-100 dark:bg-red-900/20",
+      color: "text-rose-400 bg-rose-900/20",
       label: "Cancelled subscription",
     },
   };
@@ -76,7 +76,7 @@ const RecentActivity = ({ subscriptions }) => {
   if (!activities.length) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <p className="text-slate-500 text-sm">
           Add subscriptions to see recent activity.
         </p>
       </div>
@@ -90,21 +90,21 @@ const RecentActivity = ({ subscriptions }) => {
         const Icon = config.icon;
 
         return (
-          <div key={activity.id} className="flex items-center space-x-3">
+          <div key={activity.id} className="flex items-center space-x-3 glass-tile rounded-xl px-3 py-2 shimmer-hover">
             <div className={`p-2 rounded-full ${config.color}`}>
               <Icon className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-medium text-slate-200 truncate">
                   {config.label} · {activity.subscription}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-slate-500">
                   {formatDistanceToNow(activity.date, { addSuffix: true })}
                 </p>
               </div>
               {activity.amount && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-slate-400">
                   {activity.amount}
                 </p>
               )}

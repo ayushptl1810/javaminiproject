@@ -44,7 +44,11 @@ public class DatabaseConnection {
     }
 
     @PreDestroy
-    public void closeConnection() {
+    public void onDestroy() {
+        closeConnection();
+    }
+
+    public static void closeConnection() {
         if (connection != null) {
             try {
                 connection.close();

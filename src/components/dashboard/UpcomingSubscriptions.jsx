@@ -8,8 +8,8 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
   if (!subscriptionsArray || subscriptionsArray.length === 0) {
     return (
       <div className="text-center py-6">
-        <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">No upcoming renewals</p>
+        <Calendar className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+        <p className="text-slate-500">No upcoming renewals</p>
       </div>
     );
   }
@@ -18,24 +18,24 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
     if (isToday(date))
       return {
         label: "Today",
-        color: "text-red-600 bg-red-100 dark:bg-red-900/20",
+        color: "text-rose-400 bg-rose-900/20",
       };
     if (isTomorrow(date))
       return {
         label: "Tomorrow",
-        color: "text-orange-600 bg-orange-100 dark:bg-orange-900/20",
+        color: "text-amber-400 bg-amber-900/20",
       };
 
     const days = differenceInDays(date, new Date());
     if (days <= 7)
       return {
         label: `${days} days`,
-        color: "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20",
+        color: "text-yellow-400 bg-yellow-900/20",
       };
 
     return {
       label: `${days} days`,
-      color: "text-gray-600 bg-gray-100 dark:bg-gray-700",
+      color: "text-slate-400 bg-slate-800/40",
     };
   };
 
@@ -50,11 +50,11 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
         return (
           <div
             key={subscription.id}
-            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            className="flex items-center justify-between p-3 rounded-lg glass-tile shimmer-hover"
           >
             <div className="flex-1">
               <div className="flex items-center">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                <h4 className="text-sm font-medium text-slate-200">
                   {subscription.name || "Unnamed Subscription"}
                 </h4>
                 <span
@@ -63,7 +63,7 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
                   {status.label}
                 </span>
               </div>
-              <div className="flex items-center mt-1 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center mt-1 text-sm text-slate-400">
                 <DollarSign className="h-4 w-4 mr-1" />
                 <span>{subscription.amount || "$0.00"}</span>
                 <span className="mx-2">•</span>
@@ -72,7 +72,7 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-slate-300">
                 {subscription.category || "Uncategorized"}
               </p>
             </div>
@@ -82,7 +82,7 @@ const UpcomingSubscriptions = ({ subscriptions }) => {
 
       {subscriptionsArray.length > 5 && (
         <div className="text-center pt-2">
-          <button className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          <button className="text-sm text-blue-400 hover:text-blue-300">
             View all {subscriptionsArray.length} upcoming renewals
           </button>
         </div>

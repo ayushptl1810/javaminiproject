@@ -156,26 +156,26 @@ const Analysis = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-200">
             Subscription Analysis
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-slate-400">
             Insights and trends for your subscription spending
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="card-base p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-slate-300">
               Date Range:
             </label>
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="px-3 py-2 border border-slate-800/50 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200"
             >
               {dateRangeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -189,64 +189,64 @@ const Analysis = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center">
-            <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-900">
-              <DollarSign className="h-6 w-6 text-blue-600" />
+            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/30">
+              <DollarSign className="h-6 w-6 text-blue-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-slate-400">
                 Total Spent
               </p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              <p className="text-2xl font-semibold text-slate-200">
                 ${analytics?.totalSpent || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center">
-            <div className="p-2 rounded-md bg-green-100 dark:bg-green-900">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/30">
+              <TrendingUp className="h-6 w-6 text-emerald-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-slate-400">
                 Average Monthly
               </p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              <p className="text-2xl font-semibold text-slate-200">
                 ${analytics?.averageMonthly || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center">
-            <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-900">
-              <Calendar className="h-6 w-6 text-purple-600" />
+            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/30">
+              <Calendar className="h-6 w-6 text-violet-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-slate-400">
                 Active Subscriptions
               </p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              <p className="text-2xl font-semibold text-slate-200">
                 {analytics?.activeSubscriptions || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center">
-            <div className="p-2 rounded-md bg-orange-100 dark:bg-orange-900">
-              <BarChart3 className="h-6 w-6 text-orange-600" />
+            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/30">
+              <BarChart3 className="h-6 w-6 text-amber-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-sm font-medium text-slate-400">
                 Categories
               </p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              <p className="text-2xl font-semibold text-slate-200">
                 {analytics?.categoryCount || 0}
               </p>
             </div>
@@ -257,45 +257,45 @@ const Analysis = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending Trend */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-slate-200">
               Spending Trend
             </h3>
-            <TrendingUp className="h-5 w-5 text-gray-400" />
+            <TrendingUp className="h-5 w-5 text-slate-400" />
           </div>
           <SpendingTrendChart data={spendingTrend} />
         </div>
 
         {/* Category Breakdown */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-slate-200">
               Category Breakdown
             </h3>
-            <PieChart className="h-5 w-5 text-gray-400" />
+            <PieChart className="h-5 w-5 text-slate-400" />
           </div>
           <CategoryBreakdownChart data={categoryBreakdown} />
         </div>
 
         {/* Top Subscriptions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-slate-200">
               Top Subscriptions by Cost
             </h3>
-            <BarChart3 className="h-5 w-5 text-gray-400" />
+            <BarChart3 className="h-5 w-5 text-slate-400" />
           </div>
           <TopSubscriptionsChart data={topSubscriptions} />
         </div>
 
         {/* Billing Cycle Analysis */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card-base p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-slate-200">
               Billing Cycle Distribution
             </h3>
-            <Calendar className="h-5 w-5 text-gray-400" />
+            <Calendar className="h-5 w-5 text-slate-400" />
           </div>
           <BillingCycleChart data={billingCycleAnalysis} />
         </div>

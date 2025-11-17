@@ -123,25 +123,25 @@ const Reports = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-200">
             Reports
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-slate-400">
             Generate and manage subscription reports
           </p>
         </div>
         <button
           onClick={() => setIsGeneratorOpen(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="btn-primary"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
           Generate Report
         </button>
       </div>
 
       {/* Report Templates */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="card-base p-6">
+        <h3 className="text-lg font-semibold text-slate-200 mb-4">
           Quick Report Templates
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -151,38 +151,38 @@ const Reports = () => {
               description:
                 "Overview of all subscriptions and spending for the current month",
               icon: Calendar,
-              color: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
+              color: "text-blue-400 bg-blue-500/20",
             },
             {
               title: "Category Breakdown",
               description: "Detailed analysis by subscription category",
               icon: Filter,
-              color: "text-green-600 bg-green-100 dark:bg-green-900/20",
+              color: "text-emerald-400 bg-emerald-500/20",
             },
             {
               title: "Annual Projection",
               description: "Projected costs and trends for the next 12 months",
               icon: FileText,
-              color: "text-purple-600 bg-purple-100 dark:bg-purple-900/20",
+              color: "text-violet-400 bg-violet-500/20",
             },
           ].map((template, index) => (
             <div
               key={index}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              className="p-4 border border-slate-800/50 bg-slate-900/40 rounded-lg hover:bg-slate-900/60 hover:border-slate-700/50 cursor-pointer transition-colors"
               onClick={() => {
                 setPreviewTemplate(template);
                 setIsPreviewOpen(true);
               }}
             >
               <div className="flex items-center mb-3">
-                <div className={`p-2 rounded-md ${template.color}`}>
+                <div className={`p-2 rounded-lg ${template.color}`}>
                   <template.icon className="h-5 w-5" />
                 </div>
-                <h4 className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                <h4 className="ml-3 text-sm font-medium text-slate-200">
                   {template.title}
                 </h4>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-slate-400">
                 {template.description}
               </p>
             </div>
@@ -191,8 +191,8 @@ const Reports = () => {
       </div>
 
       {/* Recent Reports */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="card-base p-6">
+        <h3 className="text-lg font-semibold text-slate-200 mb-4">
           Recent Reports
         </h3>
         {reports && reports.length > 0 ? (
@@ -200,17 +200,17 @@ const Reports = () => {
             {reports.slice(0, 5).map((report) => (
               <div
                 key={report.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                className="flex items-center justify-between p-4 bg-slate-800/40 border border-slate-800/50 rounded-lg"
               >
                 <div className="flex items-center">
-                  <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-900/20">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 rounded-lg bg-blue-500/20">
+                    <FileText className="h-5 w-5 text-blue-400" />
                   </div>
                   <div className="ml-3">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    <h4 className="text-sm font-medium text-slate-200">
                       {report.name}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-slate-400">
                       Generated on{" "}
                       {new Date(report.createdAt).toLocaleDateString()}
                     </p>
@@ -219,21 +219,21 @@ const Reports = () => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setSelectedReport(report)}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-800/50 rounded-lg transition"
                     title="View Report"
                   >
                     <Eye className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDownloadReport(report.id)}
-                    className="p-2 text-blue-600 hover:text-blue-700"
+                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-slate-800/50 rounded-lg transition"
                     title="Download Report"
                   >
                     <Download className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteReport(report.id)}
-                    className="p-2 text-red-600 hover:text-red-700"
+                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-slate-800/50 rounded-lg transition"
                     title="Delete Report"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -244,8 +244,8 @@ const Reports = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">
+            <FileText className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+            <p className="text-slate-500">
               No reports generated yet
             </p>
           </div>
@@ -254,25 +254,25 @@ const Reports = () => {
 
       {/* Scheduled Reports */}
       {scheduledReports && scheduledReports.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="card-base p-6">
+          <h3 className="text-lg font-semibold text-slate-200 mb-4">
             Scheduled Reports
           </h3>
           <div className="space-y-3">
             {scheduledReports.map((scheduled) => (
               <div
                 key={scheduled.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                className="flex items-center justify-between p-4 bg-slate-800/40 border border-slate-800/50 rounded-lg"
               >
                 <div className="flex items-center">
-                  <div className="p-2 rounded-md bg-orange-100 dark:bg-orange-900/20">
-                    <Clock className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 rounded-lg bg-amber-500/20">
+                    <Clock className="h-5 w-5 text-amber-400" />
                   </div>
                   <div className="ml-3">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    <h4 className="text-sm font-medium text-slate-200">
                       {scheduled.name}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-slate-400">
                       Runs {scheduled.frequency} • Next:{" "}
                       {new Date(scheduled.nextRun).toLocaleDateString()}
                     </p>
@@ -284,7 +284,7 @@ const Reports = () => {
                       handleDownloadReport(scheduled.reportId || scheduled.id)
                     }
                     disabled={!scheduled.reportId}
-                    className="p-2 text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-slate-800/50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                     title={
                       scheduled.reportId
                         ? "Download Latest Report"
@@ -295,7 +295,7 @@ const Reports = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteSchedule(scheduled.id)}
-                    className="p-2 text-red-600 hover:text-red-700"
+                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-slate-800/50 rounded-lg transition"
                     title="Delete Schedule"
                   >
                     <Trash2 className="h-4 w-4" />
