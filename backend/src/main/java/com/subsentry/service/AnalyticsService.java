@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,8 +23,45 @@ public class AnalyticsService {
         this.subscriptionService = subscriptionService;
     }
 
-    public Map<String, Object> getOverview(String userId) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+    private List<Subscription> filterByDateRange(List<Subscription> subscriptions, String dateRange) {
+        if (dateRange == null || dateRange.isEmpty() || "all".equalsIgnoreCase(dateRange)) {
+            return subscriptions;
+        }
+
+        LocalDate now = LocalDate.now();
+        LocalDate startDate;
+
+        switch (dateRange.toLowerCase()) {
+            case "1month":
+                startDate = now.minusMonths(1);
+                break;
+            case "3months":
+                startDate = now.minusMonths(3);
+                break;
+            case "6months":
+                startDate = now.minusMonths(6);
+                break;
+            case "1year":
+            case "yearly":
+                startDate = now.minusYears(1);
+                break;
+            default:
+                return subscriptions;
+        }
+
+        final LocalDate finalStartDate = startDate;
+        return subscriptions.stream()
+                .filter(sub -> {
+                    if (sub.getStartDate() == null) return false;
+                    LocalDate subDate = sub.getStartDate().toLocalDate();
+                    return !subDate.isBefore(finalStartDate) && !subDate.isAfter(now);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getOverview(String userId, String dateRange) {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+        List<Subscription> subscriptions = filterByDateRange(allSubscriptions, dateRange);
 
         double totalMonthlySpending = subscriptions.stream()
                 .mapToDouble(sub -> {
@@ -67,26 +104,74 @@ public class AnalyticsService {
         return overview;
     }
 
-    public Map<String, Object> getSpendingTrend(String userId) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+    public Map<String, Object> getSpendingTrend(String userId, String dateRange) {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+        List<Subscription> subscriptions = filterByDateRange(allSubscriptions, dateRange);
+        
         LocalDate now = LocalDate.now();
+        LocalDate startDate = now;
+        
+        // Determine how many months to show based on dateRange
+        int monthsToShow = 6; // default
+        if (dateRange != null && !dateRange.isEmpty()) {
+            switch (dateRange.toLowerCase()) {
+                case "1month":
+                    monthsToShow = 1;
+                    startDate = now.minusMonths(1);
+                    break;
+                case "3months":
+                    monthsToShow = 3;
+                    startDate = now.minusMonths(3);
+                    break;
+                case "6months":
+                    monthsToShow = 6;
+                    startDate = now.minusMonths(6);
+                    break;
+                case "1year":
+                case "yearly":
+                    monthsToShow = 12;
+                    startDate = now.minusYears(1);
+                    break;
+                case "all":
+                    monthsToShow = Math.max(12, (int) ChronoUnit.MONTHS.between(
+                        subscriptions.stream()
+                            .filter(sub -> sub.getStartDate() != null)
+                            .map(sub -> sub.getStartDate().toLocalDate())
+                            .min(LocalDate::compareTo)
+                            .orElse(now.minusYears(1)),
+                        now
+                    ) + 1);
+                    startDate = subscriptions.stream()
+                        .filter(sub -> sub.getStartDate() != null)
+                        .map(sub -> sub.getStartDate().toLocalDate())
+                        .min(LocalDate::compareTo)
+                        .orElse(now.minusYears(1));
+                    break;
+            }
+        }
+        
         List<Map<String, Object>> monthlyData = new ArrayList<>();
-        for (int i = 5; i >= 0; i--) {
+        for (int i = monthsToShow - 1; i >= 0; i--) {
             YearMonth period = YearMonth.from(now).minusMonths(i);
+            if (period.isBefore(YearMonth.from(startDate))) {
+                continue;
+            }
             double total = subscriptions.stream()
                     .filter(sub -> sub.getStartDate() != null && YearMonth.from(sub.getStartDate()).equals(period))
                     .mapToDouble(Subscription::getAmount)
                     .sum();
             Map<String, Object> monthEntry = new HashMap<>();
             monthEntry.put("month", period.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH));
+            monthEntry.put("year", period.getYear());
             monthEntry.put("total", round(total));
             monthlyData.add(monthEntry);
         }
         return Map.of("monthlyData", monthlyData);
     }
 
-    public Map<String, Object> getCategoryBreakdown(String userId) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+    public Map<String, Object> getCategoryBreakdown(String userId, String dateRange) {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+        List<Subscription> subscriptions = filterByDateRange(allSubscriptions, dateRange);
         Map<String, Double> categoryTotals = subscriptions.stream()
                 .collect(Collectors.groupingBy(
                         sub -> sub.getCategory() == null ? "Uncategorized" : sub.getCategory(),
@@ -103,8 +188,9 @@ public class AnalyticsService {
         return Map.of("categories", categories);
     }
 
-    public Map<String, Object> getBillingCycleAnalysis(String userId) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+    public Map<String, Object> getBillingCycleAnalysis(String userId, String dateRange) {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+        List<Subscription> subscriptions = filterByDateRange(allSubscriptions, dateRange);
         Map<String, Long> cycles = subscriptions.stream()
                 .collect(Collectors.groupingBy(
                         sub -> sub.getBillingCycle() == null ? "monthly" : sub.getBillingCycle(),
@@ -121,8 +207,9 @@ public class AnalyticsService {
         return Map.of("cycles", data);
     }
 
-    public Map<String, Object> getTopSubscriptions(String userId) {
-        List<Subscription> subscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+    public Map<String, Object> getTopSubscriptions(String userId, String dateRange) {
+        List<Subscription> allSubscriptions = subscriptionService.getAllSubscriptions(userId, null, null);
+        List<Subscription> subscriptions = filterByDateRange(allSubscriptions, dateRange);
         List<Map<String, Object>> top = subscriptions.stream()
                 .sorted((a, b) -> Double.compare(b.getAmount(), a.getAmount()))
                 .limit(5)
@@ -138,7 +225,7 @@ public class AnalyticsService {
     }
 
     public Map<String, Object> getProjections(String userId) {
-        Map<String, Object> overview = getOverview(userId);
+        Map<String, Object> overview = getOverview(userId, null);
         double annualProjection = ((Number) overview.getOrDefault("annualProjection", 0)).doubleValue();
         double monthlyProjection = annualProjection / 12;
         Map<String, Object> result = new HashMap<>();

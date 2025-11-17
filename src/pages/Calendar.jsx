@@ -107,24 +107,24 @@ const CalendarPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-200">
             Subscription Calendar
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-slate-400">
             Track your subscription renewals and payments
           </p>
         </div>
         <button
           onClick={() => setIsSubscriptionModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="btn-primary"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
           Add Subscription
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="card-base p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -136,7 +136,7 @@ const CalendarPage = () => {
                 placeholder="Search subscriptions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                className="block w-full pl-10 pr-3 py-2 border border-slate-800/50 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200"
               />
             </div>
           </div>
@@ -144,7 +144,7 @@ const CalendarPage = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="block w-full px-3 py-2 border border-slate-800/50 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
@@ -171,30 +171,30 @@ const CalendarPage = () => {
         {/* Selected Date Details */}
         <div className="space-y-6">
           {/* Selected Date Subscriptions */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="card-base p-6">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4">
               {format(selectedDate, "MMM dd, yyyy")}
             </h3>
             <div className="space-y-3">
               {getSubscriptionsForDate(selectedDate).length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                <p className="text-slate-500 text-center py-4">
                   No subscriptions for this date
                 </p>
               ) : (
                 getSubscriptionsForDate(selectedDate).map((subscription) => (
                   <div
                     key={subscription.id}
-                    className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    className="p-3 bg-slate-800/40 border border-slate-800/50 rounded-lg"
                   >
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="font-medium text-slate-200">
                         {subscription.name}
                       </h4>
-                      <span className="text-sm font-medium text-blue-600">
+                      <span className="text-sm font-medium text-blue-400">
                         ${subscription.amount}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                       {subscription.category}
                     </p>
                     <div className="flex items-center mt-2">
@@ -202,11 +202,11 @@ const CalendarPage = () => {
                         new Date(subscription.startDate),
                         selectedDate
                       ) ? (
-                        <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full">
+                        <span className="text-xs bg-emerald-900/20 text-emerald-400 px-2 py-1 rounded-full">
                           Started
                         </span>
                       ) : (
-                        <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded-full">
+                        <span className="text-xs bg-rose-900/20 text-rose-400 px-2 py-1 rounded-full">
                           Renews
                         </span>
                       )}

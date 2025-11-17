@@ -258,7 +258,7 @@ public class ReportService {
 
     private Map<String, Object> buildMonthlySummaryReport(String userId, List<Subscription> subscriptions) {
         Map<String, Object> summary = buildSummaryMetrics(subscriptions);
-        Map<String, Object> overview = analyticsService.getOverview(userId);
+        Map<String, Object> overview = analyticsService.getOverview(userId, null);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("headlineMetrics", summary);

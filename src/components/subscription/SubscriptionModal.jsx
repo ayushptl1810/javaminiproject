@@ -34,52 +34,65 @@ const SubscriptionModal = ({
   });
 
   useEffect(() => {
-    if (isOpen) {
-      if (subscription) {
-        // Populate form with subscription data for editing
-        setValue("name", subscription.name || "");
-        setValue("amount", subscription.amount || "");
-        setValue("category", subscription.category || "");
-        setValue("billingCycle", subscription.billingCycle || "monthly");
-        setValue(
-          "startDate",
-          subscription.startDate
-            ? new Date(subscription.startDate).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0]
-        );
-        setValue(
-          "autoRenewal",
+    if (!isOpen) return;
+
+    if (subscription) {
+      reset({
+        name: subscription.name || "",
+        amount:
+          typeof subscription.amount === "number"
+            ? subscription.amount
+            : subscription.amount || "",
+        category: subscription.category || "",
+        billingCycle: subscription.billingCycle || "monthly",
+        startDate: subscription.startDate
+          ? new Date(subscription.startDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        autoRenewal:
           subscription.autoRenewal !== undefined
             ? subscription.autoRenewal
-            : true
-        );
-        setValue("notes", subscription.notes || "");
-      } else {
-        reset();
-      }
+            : true,
+        notes: subscription.notes || "",
+      });
+    } else {
+      reset({
+        name: "",
+        amount: "",
+        category: "",
+        billingCycle: "monthly",
+        startDate: new Date().toISOString().split("T")[0],
+        autoRenewal: true,
+        notes: "",
+      });
     }
-  }, [isOpen, subscription, setValue, reset]);
+  }, [isOpen, subscription, reset]);
 
   const calculateNextRenewalDate = (startDate, cycle) => {
-    const date = new Date(startDate);
-    const newDate = new Date(date);
-    switch (cycle) {
-      case "monthly":
-        newDate.setMonth(newDate.getMonth() + 1);
+    const baseDate = new Date(startDate);
+    if (Number.isNaN(baseDate.getTime())) return null;
+
+    const result = new Date(baseDate);
+    const normalizedCycle = (cycle || "monthly").toLowerCase();
+
+    switch (normalizedCycle) {
+      case "weekly":
+        result.setDate(result.getDate() + 7);
         break;
       case "quarterly":
-        newDate.setMonth(newDate.getMonth() + 3);
+        result.setMonth(result.getMonth() + 3);
         break;
       case "semi-annual":
-        newDate.setMonth(newDate.getMonth() + 6);
+      case "semi_annual":
+        result.setMonth(result.getMonth() + 6);
         break;
       case "annual":
-        newDate.setFullYear(newDate.getFullYear() + 1);
+      case "yearly":
+        result.setFullYear(result.getFullYear() + 1);
         break;
       default:
-        newDate.setMonth(newDate.getMonth() + 1);
+        result.setMonth(result.getMonth() + 1);
     }
-    return newDate;
+    return result;
   };
 
   const toIsoString = (value) => {

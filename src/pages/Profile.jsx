@@ -210,10 +210,10 @@ const Profile = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-slate-200">
           Profile
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-slate-400">
           Manage your personal information and preferences
         </p>
       </div>
@@ -221,13 +221,13 @@ const Profile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Picture */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="card-base p-6 shimmer-hover">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4">
               Profile Picture
             </h3>
             <div className="text-center">
               <div className="relative inline-block">
-                <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="w-32 h-32 bg-slate-800/60 border-2 border-slate-700/50 rounded-full flex items-center justify-center overflow-hidden ring-2 ring-blue-500/20">
                   {avatar ? (
                     <img
                       src={avatar}
@@ -235,10 +235,10 @@ const Profile = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="h-16 w-16 text-gray-400" />
+                    <User className="h-16 w-16 text-slate-400" />
                   )}
                 </div>
-                <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700">
+                <label className="absolute bottom-0 right-0 bg-blue-500/80 backdrop-blur-sm border border-blue-400/50 text-white p-2 rounded-full cursor-pointer hover:bg-blue-500 hover:border-blue-300 transition-all shadow-lg">
                   <Camera className="h-4 w-4" />
                   <input
                     type="file"
@@ -248,36 +248,40 @@ const Profile = () => {
                   />
                 </label>
               </div>
-              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-4 text-sm text-slate-400">
                 Click the camera icon to upload a new profile picture
               </p>
             </div>
           </div>
 
           {/* Account Stats */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="card-base p-6 mt-6 shimmer-hover">
+            <h3 className="text-lg font-semibold text-slate-200 mb-4">
               Account Information
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center p-3 rounded-lg bg-slate-800/40 border border-slate-800/50">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <Calendar className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-slate-400">
                     Member since
                   </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-slate-200">
                     {new Date(user?.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center">
-                <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center p-3 rounded-lg bg-slate-800/40 border border-slate-800/50">
+                <div className="p-2 rounded-lg bg-emerald-500/20">
+                  <Mail className="h-5 w-5 text-emerald-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-slate-400">
                     Active subscriptions
                   </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-slate-200">
                     {isFetchingSubscriptions
                       ? "Loading..."
                       : activeSubscriptions ?? "Unavailable"}
@@ -290,41 +294,41 @@ const Profile = () => {
 
         {/* Profile Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <div className="card-base p-6 shimmer-hover">
+            <h3 className="text-lg font-semibold text-slate-200 mb-6">
               Personal Information
             </h3>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
                     Full Name
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-gray-400" />
+                      <User className="h-5 w-5 text-slate-500" />
                     </div>
                     <input
                       {...register("name", { required: "Name is required" })}
                       type="text"
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      className="block w-full pl-10 pr-3 py-2 border border-slate-800/50 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200 transition-all"
                       placeholder="Enter your full name"
                     />
                   </div>
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-rose-400">
                       {errors.name.message}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
                     Email Address
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
+                      <Mail className="h-5 w-5 text-slate-500" />
                     </div>
                     <input
                       {...register("email", {
@@ -335,12 +339,12 @@ const Profile = () => {
                         },
                       })}
                       type="email"
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      className="block w-full pl-10 pr-3 py-2 border border-slate-800/50 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200 transition-all"
                       placeholder="Enter your email"
                     />
                   </div>
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-rose-400">
                       {errors.email.message}
                     </p>
                   )}
@@ -348,28 +352,28 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Bio
                 </label>
                 <textarea
                   {...register("bio")}
                   rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="block w-full px-3 py-2 border border-slate-800/50 rounded-lg shadow-sm placeholder-slate-500 focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200 transition-all resize-none"
                   placeholder="Tell us about yourself..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Default Currency
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
+                    <DollarSign className="h-5 w-5 text-slate-500" />
                   </div>
                   <select
                     {...register("defaultCurrency")}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="block w-full pl-10 pr-3 py-2 border border-slate-800/50 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500/50 focus:border-blue-500/50 bg-slate-900/40 text-slate-200 transition-all"
                   >
                     {currencies.map((currency) => (
                       <option key={currency.value} value={currency.value}>
@@ -384,25 +388,27 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary shimmer-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
+                    <LoadingSpinner size="sm" />
                   ) : (
-                    <Save className="h-4 w-4 mr-2" />
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Changes
+                    </>
                   )}
-                  Save Changes
                 </button>
               </div>
             </form>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+          <div className="card-base p-6 mt-6 shimmer-hover">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-slate-200">
                   Notification Preferences
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-slate-400">
                   Choose how you want to stay informed about your subscriptions
                 </p>
               </div>
@@ -412,19 +418,19 @@ const Profile = () => {
               {preferenceItems.map((item) => (
                 <div
                   key={item.key}
-                  className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                  className="flex items-center justify-between border border-slate-800/50 rounded-lg p-4 bg-slate-800/40 hover:bg-slate-800/50 transition-all"
                 >
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    <h4 className="text-sm font-medium text-slate-200">
                       {item.title}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-slate-400">
                       {item.description}
                     </p>
                   </div>
                   <input
                     type="checkbox"
-                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-5 w-5 text-blue-500 focus:ring-blue-500/50 border-slate-700 rounded cursor-pointer bg-slate-900/40 checked:bg-blue-500/80 checked:border-blue-500/50"
                     checked={Boolean(notificationPreferences[item.key])}
                     onChange={() => handlePreferenceToggle(item.key)}
                     disabled={
@@ -441,14 +447,16 @@ const Profile = () => {
                 disabled={
                   isSavingNotificationPrefs || isLoadingNotificationPrefs
                 }
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary shimmer-hover disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSavingNotificationPrefs ? (
-                  <LoadingSpinner size="sm" className="mr-2" />
+                  <LoadingSpinner size="sm" />
                 ) : (
-                  <Save className="h-4 w-4 mr-2" />
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Notification Settings
+                  </>
                 )}
-                Save Notification Settings
               </button>
             </div>
           </div>

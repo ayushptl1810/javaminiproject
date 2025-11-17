@@ -16,9 +16,10 @@ public class AnalyticsController {
     private AnalyticsService analyticsService;
     
     @GetMapping("/overview")
-    public ResponseEntity<?> getOverview(@RequestParam String userId) {
+    public ResponseEntity<?> getOverview(@RequestParam String userId,
+                                         @RequestParam(required = false) String dateRange) {
         try {
-            Map<String, Object> overview = analyticsService.getOverview(userId);
+            Map<String, Object> overview = analyticsService.getOverview(userId, dateRange);
             return ResponseEntity.ok(Map.of("data", overview));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch analytics overview"));
@@ -26,9 +27,10 @@ public class AnalyticsController {
     }
     
     @GetMapping("/spending-trend")
-    public ResponseEntity<?> getSpendingTrend(@RequestParam String userId) {
+    public ResponseEntity<?> getSpendingTrend(@RequestParam String userId,
+                                              @RequestParam(required = false) String dateRange) {
         try {
-            Map<String, Object> trend = analyticsService.getSpendingTrend(userId);
+            Map<String, Object> trend = analyticsService.getSpendingTrend(userId, dateRange);
             return ResponseEntity.ok(Map.of("data", trend));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch spending trend"));
@@ -36,9 +38,10 @@ public class AnalyticsController {
     }
     
     @GetMapping("/category-breakdown")
-    public ResponseEntity<?> getCategoryBreakdown(@RequestParam String userId) {
+    public ResponseEntity<?> getCategoryBreakdown(@RequestParam String userId,
+                                                  @RequestParam(required = false) String dateRange) {
         try {
-            Map<String, Object> breakdown = analyticsService.getCategoryBreakdown(userId);
+            Map<String, Object> breakdown = analyticsService.getCategoryBreakdown(userId, dateRange);
             return ResponseEntity.ok(Map.of("data", breakdown));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch category breakdown"));
@@ -46,9 +49,10 @@ public class AnalyticsController {
     }
     
     @GetMapping("/billing-cycle")
-    public ResponseEntity<?> getBillingCycleAnalysis(@RequestParam String userId) {
+    public ResponseEntity<?> getBillingCycleAnalysis(@RequestParam String userId,
+                                                     @RequestParam(required = false) String dateRange) {
         try {
-            Map<String, Object> analysis = analyticsService.getBillingCycleAnalysis(userId);
+            Map<String, Object> analysis = analyticsService.getBillingCycleAnalysis(userId, dateRange);
             return ResponseEntity.ok(Map.of("data", analysis));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch billing cycle analysis"));
@@ -56,9 +60,10 @@ public class AnalyticsController {
     }
     
     @GetMapping("/top-subscriptions")
-    public ResponseEntity<?> getTopSubscriptions(@RequestParam String userId) {
+    public ResponseEntity<?> getTopSubscriptions(@RequestParam String userId,
+                                                @RequestParam(required = false) String dateRange) {
         try {
-            Map<String, Object> topSubs = analyticsService.getTopSubscriptions(userId);
+            Map<String, Object> topSubs = analyticsService.getTopSubscriptions(userId, dateRange);
             return ResponseEntity.ok(Map.of("data", topSubs));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch top subscriptions"));
