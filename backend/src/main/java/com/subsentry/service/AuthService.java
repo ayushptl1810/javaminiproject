@@ -14,16 +14,18 @@ public class AuthService {
     private final UserDAO userDAO;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
-    public AuthService(
-            @Value("${app.data.mode:mock}") String dataMode,
-            UserDAO userDAO,
-            PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil) {
+    public AuthService(@Value("${app.data.mode:mock}") String dataMode,
+                    UserDAO userDAO,
+                    PasswordEncoder passwordEncoder,
+                    JwtUtil jwtUtil,
+                    EmailService emailService) {
         this.useMockData = "mock".equalsIgnoreCase(dataMode);
         this.userDAO = userDAO;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
     public User authenticate(String email, String password) {

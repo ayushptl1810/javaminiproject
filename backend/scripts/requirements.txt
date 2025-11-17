@@ -1,0 +1,6 @@
+pandas
+matplotlib
+python-dateutil
+mysql-connector-python
+reportlab
+

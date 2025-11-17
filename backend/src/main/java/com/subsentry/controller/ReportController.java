@@ -1,5 +1,6 @@
 package com.subsentry.controller;
 
+import com.subsentry.model.GeneratedReport;
 import com.subsentry.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -26,17 +27,33 @@ public class ReportController {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch reports"));
         }
     }
-    
     @PostMapping("/generate")
     public ResponseEntity<?> generateReport(@RequestParam String userId,
                                             @RequestBody Map<String, Object> reportData) {
         try {
-            return ResponseEntity.ok(Map.of("data", reportService.generateReport(userId, reportData)));
+            System.out.println("ReportController.generateReport: userId=" + userId + ", payload=" + reportData);
+            GeneratedReport report = reportService.generateReport(userId, reportData);
+            return ResponseEntity.ok(Map.of("data", report));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Failed to generate report"));
+            System.out.println("ReportController.generateReport error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-    
+
+    @PostMapping("/ai")
+    public ResponseEntity<?> generateAiReport(@RequestParam String userId,
+                                              @RequestBody Map<String, Object> reportData) {
+        try {
+            System.out.println("ReportController.generateAiReport: userId=" + userId + ", payload=" + reportData);
+            GeneratedReport report = reportService.generateAiReport(userId, reportData);
+            return ResponseEntity.ok(Map.of("data", report));
+        } catch (Exception e) {
+            System.out.println("ReportController.generateAiReport error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     @GetMapping("/scheduled")
     public ResponseEntity<?> getScheduledReports(@RequestParam String userId) {
         try {

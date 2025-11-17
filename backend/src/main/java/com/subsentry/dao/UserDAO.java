@@ -44,14 +44,7 @@ public class UserDAO {
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getString("id"));
-                user.setName(rs.getString("name"));
-                user.setEmail(rs.getString("email"));
-                user.setPassword(rs.getString("password"));
-                user.setDefaultCurrency(rs.getString("default_currency"));
-                user.setTimezone(rs.getString("timezone"));
-                return user;
+                return mapUser(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,18 +55,14 @@ public class UserDAO {
     @SuppressWarnings("CallToPrintStackTrace")
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT * FROM users";
+        String sql = "SELECT * FROM users WHERE enabled = 1";
         
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
             while (rs.next()) {
-                User user = new User();
-                user.setId(rs.getString("id"));
-                user.setName(rs.getString("name"));
-                user.setEmail(rs.getString("email"));
-                users.add(user);
+                users.add(mapUser(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -133,6 +122,7 @@ public class UserDAO {
         user.setId(rs.getString("id"));
         user.setName(rs.getString("name"));
         user.setEmail(rs.getString("email"));
+        user.setPassword(rs.getString("password"));
         user.setDefaultCurrency(rs.getString("default_currency"));
         user.setTimezone(rs.getString("timezone"));
         user.setDateFormat(rs.getString("date_format"));

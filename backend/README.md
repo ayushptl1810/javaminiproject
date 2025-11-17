@@ -60,7 +60,8 @@ src/main/java/com/subsentry/
 
 - Java 17+
 - Maven 3.6+
-- MongoDB 4.4+
+- MySQL 8.0+
+- Python 3.8+ (for report generation)
 
 ### Installation
 
@@ -77,30 +78,53 @@ src/main/java/com/subsentry/
    mvn clean install
    ```
 
-3. **Configure application**
-   Create `application.properties`:
+3. **Setup Python environment for report generation**
+
+   ```bash
+   cd scripts
+   # On macOS/Linux:
+   ./setup_python_env.sh
+   # On Windows:
+   setup_python_env.bat
+   ```
+
+   This creates a virtual environment and installs required Python packages (pandas, matplotlib, mysql-connector-python, reportlab).
+
+   **Important:** After setup, configure Java to use the venv Python:
+   
+   ```bash
+   # Option 1: Set environment variable (recommended)
+   export PYTHON_CMD=./scripts/venv/bin/python  # macOS/Linux
+   # or
+   set PYTHON_CMD=scripts\venv\Scripts\python.exe  # Windows
+   
+   # Option 2: Update application.properties
+   reports.python.command=./scripts/venv/bin/python
+   ```
+
+4. **Configure application**
+   Update `application.properties` with your database credentials:
 
    ```properties
    # Server Configuration
    server.port=8080
 
-   # MongoDB Configuration
-   spring.data.mongodb.host=localhost
-   spring.data.mongodb.port=27017
-   spring.data.mongodb.database=subsentry
+   # Database Configuration
+   spring.datasource.url=jdbc:mysql://127.0.0.1:3306/subsentry
+   spring.datasource.username=root
+   spring.datasource.password=password
 
    # JWT Configuration
    jwt.secret=your-secret-key
    jwt.expiration=86400000
 
-   # Email Configuration
-   spring.mail.host=smtp.gmail.com
-   spring.mail.port=587
-   spring.mail.username=your-email@gmail.com
-   spring.mail.password=your-password
+   # Python Report Configuration (optional)
+   reports.python.enabled=true
+   reports.python.command=${PYTHON_CMD:python3}
+   reports.python.script=scripts/report_generator.py
    ```
 
-4. **Run the application**
+5. **Run the application**
    ```bash
    mvn spring-boot:run
    ```

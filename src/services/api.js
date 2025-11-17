@@ -2,11 +2,13 @@ import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT || 10000);
+const AI_TIMEOUT = Number(import.meta.env.VITE_GEMINI_TIMEOUT || 45000);
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -151,6 +153,11 @@ export const reportAPI = {
   getTemplates: () => api.get("/reports/templates"),
   generate: (reportData, params = {}) =>
     api.post("/reports/generate", reportData, userConfig(params)),
+  generateAi: (reportData, params = {}) =>
+    api.post("/reports/ai", reportData, {
+      ...userConfig(params),
+      timeout: AI_TIMEOUT,
+    }),
   getReport: (id, params = {}) =>
     api.get(`/reports/${id}`, { params: withUserParams(params) }),
   getReports: (params = {}) =>
